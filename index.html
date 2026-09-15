@@ -8,22 +8,45 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; }
-  h1 { font-size: 22px; margin-bottom: 4px; }
-  h1 span { color: #58a6ff; }
-  .sub { color: #8b949e; font-size: 13px; margin-bottom: 18px; }
-  .count { display: inline-block; background: #238636; border-radius: 20px; padding: 4px 14px; font-weight: bold; font-size: 14px; margin-bottom: 18px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 14px; }
+  body {
+    background: radial-gradient(1200px 600px at 20% -10%, #1b2340 0%, #0d1117 55%) fixed, #0d1117;
+    color: #e6edf3; font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; min-height: 100vh;
+  }
+  header.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 6px; }
+  h1 { font-size: 24px; background: linear-gradient(90deg, #58a6ff, #bc8cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .spacer { flex: 1; }
+  .search { background: #161b22; border: 1px solid #30363d; color: #fff; border-radius: 10px; padding: 8px 12px; font-size: 13px; width: 220px; outline: none; }
+  .search:focus { border-color: #58a6ff; }
+  .iconbtn { background: #161b22; border: 1px solid #30363d; color: #fff; border-radius: 10px; padding: 8px 12px; font-size: 14px; cursor: pointer; }
+  .iconbtn:hover { border-color: #58a6ff; }
+  .sub { color: #8b949e; font-size: 13px; margin-bottom: 16px; }
+  .count { display: inline-block; background: linear-gradient(90deg, #238636, #2ea043); border-radius: 20px; padding: 5px 16px; font-weight: bold; font-size: 14px; margin-bottom: 18px; box-shadow: 0 0 18px rgba(46,160,67,.35); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+  .card {
+    background: linear-gradient(180deg, #1a2030 0%, #141a28 100%);
+    border: 1px solid #30363d; border-radius: 14px; padding: 14px;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .card:hover { transform: translateY(-2px); border-color: #58a6ff; }
+  .card.is-banned { border-color: #da3633; }
   .top { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
-  .top img { width: 64px; height: 64px; border-radius: 50%; background: #21262d; flex-shrink: 0; }
-  .info { min-width: 0; }
-  .name { font-weight: bold; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .detail { font-size: 12px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .online { font-size: 11px; color: #3fb950; font-weight: bold; }
-  .banned { font-size: 11px; color: #f85149; font-weight: bold; }
+  .av { position: relative; width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #1f6feb, #8957e5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: bold; color: #fff;
+    box-shadow: 0 0 0 2px #3fb950, 0 0 14px rgba(63,185,80,.4); overflow: hidden; }
+  .card.is-banned .av { box-shadow: 0 0 0 2px #da3633, 0 0 14px rgba(218,54,51,.4); }
+  .av img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; background: #21262d; }
+  .info { min-width: 0; flex: 1; }
+  .name { font-weight: bold; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .detail { font-size: 12px; color: #9aa4b2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .job { cursor: pointer; }
+  .job:hover { color: #58a6ff; }
+  .job .copy { color: #58a6ff; font-size: 11px; }
+  .online { font-size: 11px; color: #3fb950; font-weight: bold; margin-top: 2px; }
+  .banned { font-size: 11px; color: #f85149; font-weight: bold; margin-top: 2px; }
   .btns { display: flex; flex-wrap: wrap; gap: 6px; }
-  .btns button { border: none; border-radius: 8px; padding: 7px 10px; font-size: 12px; font-weight: bold; cursor: pointer; color: #fff; }
+  .btns button { border: none; border-radius: 8px; padding: 7px 10px; font-size: 12px; font-weight: bold; cursor: pointer; color: #fff; transition: filter .1s; }
   .btns button:hover { filter: brightness(1.2); }
   .b-join { background: #1f6feb; }
   .b-kick { background: #da3633; }
@@ -31,7 +54,11 @@
   .b-unban { background: #238636; }
   .b-scare { background: #9e6a03; }
   .b-music { background: #8957e5; }
+  .b-pat { background: #b3541e; }
   .empty { color: #8b949e; font-size: 14px; padding: 30px 0; text-align: center; }
+  h2 { font-size: 16px; color: #8b949e; margin: 22px 0 12px; }
+  .card.off { opacity: .55; }
+  .left { font-size: 11px; color: #8b949e; font-weight: bold; margin-top: 2px; }
   .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3fb950; margin-right: 5px; animation: pulse 1.5s infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
   #lock { position: fixed; inset: 0; background: #0d1117; display: flex; align-items: center; justify-content: center; z-index: 9999; }
@@ -42,6 +69,12 @@
   #lockBtn { width: 100%; padding: 10px; border: none; border-radius: 8px; background: #238636; color: #fff; font-weight: bold; font-size: 14px; cursor: pointer; }
   #lockBtn:hover { filter: brightness(1.15); }
   #lockMsg { margin-top: 10px; font-size: 12px; color: #f85149; min-height: 16px; }
+  #toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #161b22; border: 1px solid #58a6ff; color: #fff; border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 10000;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -54,14 +87,24 @@
       <div id="lockMsg"></div>
     </div>
   </div>
-  <h1>Explhub <span>· Usuarios en tiempo real</span></h1>
+
+  <header class="topbar">
+    <h1>Explhub · Usuarios en tiempo real</h1>
+    <div class="spacer"></div>
+    <input class="search" id="search" placeholder="🔍 Buscar usuario...">
+    <button class="iconbtn" id="soundBtn" title="Aviso de nuevo usuario">🔔</button>
+  </header>
   <div class="sub">Creado por Xplort ✓ · Se actualiza solo · Panel de admin</div>
   <div class="count"><span class="dot"></span><span id="onlineCount">0</span> en línea</div>
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" style="display:none">Nadie usando el script ahora mismo.</div>
+  <h2 id="offTitle" style="display:none">Desconectados recientemente</h2>
+  <div class="grid" id="gridOff"></div>
+  <div id="toast"></div>
 
 <script>
   var ADMIN_KEY = "EXPLHUB_XPLORT_2026";
+  var EXPECTED_HASH = "8a504d6625ad4323decbec43f1415168a98897c3199e8265cf949a5004a84025";
 
   firebase.initializeApp({
     databaseURL: "https://explhub-default-rtdb.firebaseio.com"
@@ -69,6 +112,10 @@
   var db = firebase.database();
   var cache = {};
   var bans = {};
+  var avatarCache = {};
+  var seenUids = null;
+  var soundOn = true;
+  try { soundOn = localStorage.getItem("explhub_sound") !== "off"; } catch (e) {}
 
   function timeAgo(ts) {
     var s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -79,6 +126,65 @@
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { t.classList.remove("show"); }, 2200);
+  }
+
+  function copyText(txt, okMsg) {
+    function done() { toast(okMsg || "Copiado ✓"); }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(done, function() { prompt("Copia manual:", txt); });
+      } else {
+        prompt("Copia manual:", txt);
+      }
+    } catch (e) { prompt("Copia manual:", txt); }
+  }
+
+  function beep() {
+    if (!soundOn) return;
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880; o.type = "sine";
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      o.start();
+      o.stop(ctx.currentTime + 0.18);
+    } catch (e) {}
+  }
+
+  function loadAvatar(uid) {
+    if (avatarCache[uid]) return;
+    avatarCache[uid] = "pending";
+    fetch("https://thumbnails.roblox.com/v1/users/avatar-headshot?userId=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false")
+      .then(function(r) { return r.json(); })
+      .then(function(j) {
+        if (j && j.data && j.data[0] && j.data[0].imageUrl) {
+          avatarCache[uid] = j.data[0].imageUrl;
+          render();
+        } else {
+          avatarCache[uid] = "letter";
+        }
+      })
+      .catch(function() { avatarCache[uid] = "letter"; });
+  }
+
+  function avatarHtml(uid, name) {
+    var letter = esc((name || "?").charAt(0).toUpperCase());
+    var cached = avatarCache[uid];
+    if (cached && cached !== "pending" && cached !== "letter") {
+      return '<div class="av"><span>' + letter + '</span><img src="' + cached + '" loading="lazy" onerror="this.remove()"></div>';
+    }
+    if (!cached) loadAvatar(uid);
+    return '<div class="av"><span>' + letter + '</span></div>';
   }
 
   function pushCmd(uid, action, args) {
@@ -92,17 +198,15 @@
 
   function doJoin(uid) {
     var u = (cache[uid] || {});
-    var code = 'game:GetService("TeleportService"):TeleportToPlaceInstance(' + u.placeId + ', "' + (u.jobId || "") + '")';
-    try {
-      if (navigator.clipboard) navigator.clipboard.writeText(code);
-    } catch (e) {}
-    prompt("Pégalo en tu executor para unirte a " + (u.username || uid) + ":", code);
+    if (!u.jobId) { toast("Sin JobId para unirse"); return; }
+    var code = 'game:GetService("TeleportService"):TeleportToPlaceInstance(' + u.placeId + ', "' + u.jobId + '")';
+    copyText(code, "Comando copiado, pégalo en tu executor ✓");
   }
 
   function doKick(uid) {
     var r = prompt("Motivo del kick (vacío = mensaje por defecto):", "") || "";
     pushCmd(uid, "kick", { reason: r });
-    alert("Kick enviado a " + ((cache[uid] || {}).username || uid));
+    toast("Kick enviado ✓");
   }
 
   function doBan(uid) {
@@ -111,16 +215,19 @@
       reason: r,
       at: firebase.database.ServerValue.TIMESTAMP
     });
+    toast("Baneado ✓");
   }
 
   function doUnban(uid) {
     db.ref("bans/" + uid).remove();
+    toast("Desbaneado ✓");
   }
 
   function doScare(uid) {
+    var img = prompt("Image ID del jumpscare (vacío = imagen por defecto):", "10509128628") || "";
     var s = prompt("Sound ID del susto (opcional, vacío = solo visual):", "") || "";
-    pushCmd(uid, "jumpscare", { soundId: s });
-    alert("Jumpscare enviado a " + ((cache[uid] || {}).username || uid));
+    pushCmd(uid, "jumpscare", { imageId: img, soundId: s });
+    toast("Jumpscare enviado ✓");
   }
 
   function doMusic(uid) {
@@ -128,52 +235,92 @@
     var vol = "3";
     if (id !== "") vol = prompt("Volumen (1-10):", "3") || "3";
     pushCmd(uid, "music", { assetId: id, volume: vol });
-    alert(id === "" ? "Música detenida." : "Música enviada a " + ((cache[uid] || {}).username || uid));
+    toast(id === "" ? "Música detenida ✓" : "Música enviada ✓");
+  }
+
+  function cardHtml(uid, d, isRecent) {
+    var isBanned = !!bans[uid];
+    var job = d.jobId || "";
+    var status;
+    if (isRecent) {
+      status = '<div class="left">desconectado · ' + timeAgo(d.lastSeen) + '</div>';
+    } else if (isBanned) {
+      status = '<div class="banned">⛔ BANEADO</div>';
+    } else {
+      status = '<div class="online"><span class="dot"></span>en línea · ' + timeAgo(d.lastSeen) + '</div>';
+    }
+    var banBtn = isBanned
+      ? '<button class="b-unban" data-act="unban" data-uid="' + esc(uid) + '">Desbanear</button>'
+      : '<button class="b-ban" data-act="ban" data-uid="' + esc(uid) + '">Banear</button>';
+    var btns = isRecent
+      ? banBtn
+      : '<button class="b-join" data-act="join" data-uid="' + esc(uid) + '">Unirse</button>' +
+        '<button class="b-kick" data-act="kick" data-uid="' + esc(uid) + '">Kick</button>' +
+        banBtn +
+        '<button class="b-scare" data-act="scare" data-uid="' + esc(uid) + '">Jumpscare</button>' +
+        '<button class="b-music" data-act="music" data-uid="' + esc(uid) + '">Música</button>' +
+        '<button class="b-pat" data-act="pat" data-uid="' + esc(uid) + '">Patricio</button>';
+    return '<div class="card' + (isBanned ? " is-banned" : "") + (isRecent ? " off" : "") + '">' +
+      '<div class="top">' +
+        avatarHtml(uid, d.displayName || d.username) +
+        '<div class="info">' +
+          '<div class="name">' + esc(d.displayName || d.username) + '</div>' +
+          '<div class="detail">@' + esc(d.username) + ' · ID ' + esc(uid) + '</div>' +
+          '<div class="detail">🎮 ' + esc(d.game || ("Place " + d.placeId)) + '</div>' +
+          '<div class="detail">⚙️ ' + esc(d.executor || "?") + '</div>' +
+          (!isRecent && job ? '<div class="detail job" data-job="' + esc(job) + '" title="Clic para copiar JobId">🪪 ' + esc(String(job).slice(0, 8)) + '… <span class="copy">copiar</span></div>' : "") +
+          status +
+        '</div>' +
+      '</div>' +
+      '<div class="btns">' + btns + '</div></div>';
   }
 
   function render() {
     var grid = document.getElementById("grid");
+    var gridOff = document.getElementById("gridOff");
+    var q = (document.getElementById("search").value || "").toLowerCase();
     var now = Date.now();
-    var users = [];
+    var online = [], recent = [];
     Object.keys(cache).forEach(function(uid) {
       var u = cache[uid];
-      if (u && u.lastSeen && (now - u.lastSeen) < 45000) users.push({ uid: uid, d: u });
+      if (!u || !u.lastSeen) return;
+      var age = now - u.lastSeen;
+      if (age < 35000) online.push({ uid: uid, d: u });
+      else if (age < 600000) recent.push({ uid: uid, d: u });
     });
-    users.sort(function(a, b) { return b.d.lastSeen - a.d.lastSeen; });
-    document.getElementById("onlineCount").textContent = users.length;
-    document.getElementById("empty").style.display = users.length ? "none" : "block";
-    grid.innerHTML = users.map(function(u) {
-      var d = u.d, uid = u.uid;
-      var isBanned = !!bans[uid];
-      var av = "https://www.roblox.com/headshot-thumbnail/image?userId=" + encodeURIComponent(uid) + "&width=150&height=150&format=png";
-      var status = isBanned
-        ? '<div class="banned">⛔ BANEADO</div>'
-        : '<div class="online"><span class="dot"></span>en línea · ' + timeAgo(d.lastSeen) + '</div>';
-      var banBtn = isBanned
-        ? '<button class="b-unban" data-act="unban" data-uid="' + esc(uid) + '">Desbanear</button>'
-        : '<button class="b-ban" data-act="ban" data-uid="' + esc(uid) + '">Banear</button>';
-      return '<div class="card">' +
-        '<div class="top">' +
-          '<img src="' + av + '" loading="lazy" onerror="this.style.visibility=\'hidden\'">' +
-          '<div class="info">' +
-            '<div class="name">' + esc(d.displayName || d.username) + '</div>' +
-            '<div class="detail">@' + esc(d.username) + ' · ID ' + esc(uid) + '</div>' +
-            '<div class="detail">🎮 ' + esc(d.game || ("Place " + d.placeId)) + '</div>' +
-            '<div class="detail">⚙️ ' + esc(d.executor || "?") + '</div>' +
-            status +
-          '</div>' +
-        '</div>' +
-        '<div class="btns">' +
-          '<button class="b-join" data-act="join" data-uid="' + esc(uid) + '">Unirse</button>' +
-          '<button class="b-kick" data-act="kick" data-uid="' + esc(uid) + '">Kick</button>' +
-          banBtn +
-          '<button class="b-scare" data-act="scare" data-uid="' + esc(uid) + '">Jumpscare</button>' +
-          '<button class="b-music" data-act="music" data-uid="' + esc(uid) + '">Música</button>' +
-        '</div></div>';
-    }).join("");
+    online.sort(function(a, b) { return b.d.lastSeen - a.d.lastSeen; });
+    recent.sort(function(a, b) { return b.d.lastSeen - a.d.lastSeen; });
+    if (seenUids === null) {
+      seenUids = {};
+      online.forEach(function(u) { seenUids[u.uid] = 1; });
+    } else {
+      online.forEach(function(u) {
+        if (!seenUids[u.uid]) {
+          seenUids[u.uid] = 1;
+          beep();
+          toast("🟢 " + (u.d.displayName || u.d.username) + " se conectó");
+        }
+      });
+    }
+    function match(u) {
+      if (!q) return true;
+      var hay = ((u.d.displayName || "") + " " + (u.d.username || "") + " " + u.uid).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    }
+    var shownOn = online.filter(match), shownOff = recent.filter(match);
+    document.getElementById("onlineCount").textContent = online.length;
+    document.getElementById("empty").style.display = online.length ? "none" : "block";
+    document.getElementById("offTitle").style.display = shownOff.length ? "block" : "none";
+    grid.innerHTML = shownOn.map(function(u) { return cardHtml(u.uid, u.d, false); }).join("");
+    gridOff.innerHTML = shownOff.map(function(u) { return cardHtml(u.uid, u.d, true); }).join("");
   }
 
-  document.getElementById("grid").addEventListener("click", function(e) {
+  document.body.addEventListener("click", function(e) {
+    var j = e.target.closest(".job");
+    if (j && j.getAttribute("data-job")) {
+      copyText(j.getAttribute("data-job"), "JobId copiado ✓");
+      return;
+    }
     var b = e.target.closest("button[data-act]");
     if (!b) return;
     var act = b.getAttribute("data-act"), uid = b.getAttribute("data-uid");
@@ -183,9 +330,19 @@
     else if (act === "unban") doUnban(uid);
     else if (act === "scare") doScare(uid);
     else if (act === "music") doMusic(uid);
+    else if (act === "pat") { pushCmd(uid, "patricio", {}); toast("Patricio enviado ✓"); }
   });
 
-  var EXPECTED_HASH = "8a504d6625ad4323decbec43f1415168a98897c3199e8265cf949a5004a84025";
+  document.getElementById("search").addEventListener("input", render);
+  document.getElementById("soundBtn").addEventListener("click", function() {
+    soundOn = !soundOn;
+    try { localStorage.setItem("explhub_sound", soundOn ? "on" : "off"); } catch (e) {}
+    document.getElementById("soundBtn").textContent = soundOn ? "🔔" : "🔕";
+    toast(soundOn ? "Avisos activados" : "Avisos silenciados");
+  });
+  try {
+    document.getElementById("soundBtn").textContent = soundOn ? "🔔" : "🔕";
+  } catch (e) {}
 
   function sha256hex(str) {
     var enc = new TextEncoder().encode(str);
