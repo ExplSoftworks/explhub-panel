@@ -218,22 +218,18 @@
     } catch (e) {}
   }
 
-  var AVATAR_PROXY = "https://thumbnails.rotunnel.com";
+  var AVATAR_URL = "https://www.roblox.com/headshot-thumbnail/image?userId=";
 
   function loadAvatar(uid) {
     if (avatarCache[uid]) return;
     avatarCache[uid] = "pending";
-    fetch(AVATAR_PROXY + "/v1/users/avatar-headshot?userId=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false")
-      .then(function(r) { return r.json(); })
-      .then(function(j) {
-        if (j && j.data && j.data[0] && j.data[0].imageUrl) {
-          avatarCache[uid] = j.data[0].imageUrl;
-          render();
-        } else {
-          avatarCache[uid] = "letter";
-        }
-      })
-      .catch(function() { avatarCache[uid] = "letter"; });
+    var img = new Image();
+    img.onload = function() {
+      avatarCache[uid] = AVATAR_URL + encodeURIComponent(uid) + "&width=150&height=150&format=png";
+      render();
+    };
+    img.onerror = function() { avatarCache[uid] = "letter"; };
+    img.src = AVATAR_URL + encodeURIComponent(uid) + "&width=150&height=150&format=png";
   }
 
   function avatarHtml(uid, name) {
@@ -407,13 +403,12 @@
       img.src = cached; img.style.display = "block";
     } else {
       img.style.display = "none";
-      fetch(AVATAR_PROXY + "/v1/users/avatar-headshot?userId=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false")
-        .then(function(r) { return r.json(); })
-        .then(function(j) {
-          if (j && j.data && j.data[0] && j.data[0].imageUrl) {
-            img.src = j.data[0].imageUrl; img.style.display = "block";
-          }
-        }).catch(function() {});
+      var mImg = new Image();
+      mImg.onload = function() {
+        avatarCache[uid] = AVATAR_URL + encodeURIComponent(uid) + "&width=150&height=150&format=png";
+        img.src = avatarCache[uid]; img.style.display = "block";
+      };
+      mImg.src = AVATAR_URL + encodeURIComponent(uid) + "&width=150&height=150&format=png";
     }
     document.getElementById("trollModal").classList.add("show");
   }
