@@ -56,29 +56,6 @@
   .b-music { background: #8957e5; }
   .b-pat { background: #b3541e; }
   .b-troll { background: linear-gradient(90deg, #da3633, #8957e5); }
-  .b-tag { background: #30363d; font-size: 11px; padding: 5px 8px; }
-  .b-tag:hover { background: #484f58; }
-  .tag-badge {
-    display: inline-block; background: linear-gradient(90deg, #1f6feb, #8957e5);
-    border-radius: 12px; padding: 3px 10px; font-size: 11px; font-weight: bold;
-    color: #fff; margin-top: 4px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .tag-popup {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #161b22; border: 1px solid #30363d; border-radius: 14px;
-    padding: 20px; width: 320px; z-index: 9998; display: none;
-  }
-  .tag-popup.show { display: block; }
-  .tag-popup-title { font-weight: bold; font-size: 15px; margin-bottom: 10px; }
-  .tag-popup-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #30363d; background: #0d1117; color: #fff; font-size: 13px; margin-bottom: 10px; outline: none; }
-  .tag-popup-input:focus { border-color: #58a6ff; }
-  .tag-popup-btns { display: flex; gap: 8px; }
-  .tag-popup-btns button { flex: 1; padding: 8px; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; color: #fff; }
-  .tag-save { background: #238636; }
-  .tag-clear { background: #da3633; }
-  .tag-cancel { background: #30363d; }
-  .tag-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 9997; display: none; }
-  .tag-overlay.show { display: block; }
   .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 9998; display: none; align-items: center; justify-content: center; }
   .modal-bg.show { display: flex; }
   .modal {
@@ -157,16 +134,6 @@
   <div class="empty" id="empty" style="display:none">Nadie usando el script ahora mismo.</div>
   <h2 id="offTitle" style="display:none">Desconectados recientemente</h2>
   <div class="grid" id="gridOff"></div>
-  <div class="tag-overlay" id="tagOverlay"></div>
-  <div class="tag-popup" id="tagPopup">
-    <div class="tag-popup-title">Etiqueta para <span id="tagPopupName">?</span></div>
-    <input class="tag-popup-input" id="tagPopupInput" placeholder="Escribe una etiqueta..." maxlength="30">
-    <div class="tag-popup-btns">
-      <button class="tag-cancel" id="tagPopupCancel">Cancelar</button>
-      <button class="tag-clear" id="tagPopupClear">Quitar</button>
-      <button class="tag-save" id="tagPopupSave">Guardar</button>
-    </div>
-  </div>
 
   <div id="toast"></div>
   <div class="modal-bg" id="trollModal">
@@ -203,7 +170,6 @@
   var db = firebase.database();
   var cache = {};
   var bans = {};
-  var myTags = {};
   var avatarCache = {};
   var seenUids = null;
   var soundOn = true;
@@ -340,50 +306,6 @@
     toast(id === "" ? "Música detenida ✓" : "Música enviada ✓");
   }
 
-  var tagPopupUid = null;
-  function openTagPopup(uid) {
-    tagPopupUid = uid;
-    var u = cache[uid] || {};
-    document.getElementById("tagPopupName").textContent = u.displayName || u.username || uid;
-    document.getElementById("tagPopupInput").value = myTags[uid] || "";
-    document.getElementById("tagPopup").classList.add("show");
-    document.getElementById("tagOverlay").classList.add("show");
-    document.getElementById("tagPopupInput").focus();
-  }
-  function closeTagPopup() {
-    document.getElementById("tagPopup").classList.remove("show");
-    document.getElementById("tagOverlay").classList.remove("show");
-    tagPopupUid = null;
-  }
-  document.getElementById("tagPopupCancel").addEventListener("click", closeTagPopup);
-  document.getElementById("tagOverlay").addEventListener("click", closeTagPopup);
-  document.getElementById("tagPopupSave").addEventListener("click", function() {
-    if (!tagPopupUid) return;
-    var val = (document.getElementById("tagPopupInput").value || "").trim();
-    if (val === "") {
-      db.ref("tags/" + myUid + "/" + tagPopupUid).remove();
-      delete myTags[tagPopupUid];
-    } else {
-      db.ref("tags/" + myUid + "/" + tagPopupUid).set(val);
-      myTags[tagPopupUid] = val;
-    }
-    render();
-    closeTagPopup();
-    toast("Etiqueta guardada ✓");
-  });
-  document.getElementById("tagPopupClear").addEventListener("click", function() {
-    if (!tagPopupUid) return;
-    db.ref("tags/" + myUid + "/" + tagPopupUid).remove();
-    delete myTags[tagPopupUid];
-    render();
-    closeTagPopup();
-    toast("Etiqueta eliminada ✓");
-  });
-  document.getElementById("tagPopupInput").addEventListener("keydown", function(e) {
-    if (e.key === "Enter") document.getElementById("tagPopupSave").click();
-    if (e.key === "Escape") closeTagPopup();
-  });
-
   function cardHtml(uid, d, isRecent) {
     var isBanned = !!bans[uid];
     var job = d.jobId || "";
@@ -405,18 +327,13 @@
         banBtn +
         '<button class="b-scare" data-act="scare" data-uid="' + esc(uid) + '">Jumpscare</button>' +
         '<button class="b-music" data-act="music" data-uid="' + esc(uid) + '">Música</button>' +
-        '<button class="b-troll" data-act="troll" data-uid="' + esc(uid) + '">🎯 Troll</button>' +
-        '<button class="b-tag" data-act="tag" data-uid="' + esc(uid) + '">🏷️ Etiqueta</button>';
-    var tagBadge = myTags[uid]
-      ? '<div class="tag-badge">' + esc(myTags[uid]) + '</div>'
-      : '';
+        '<button class="b-troll" data-act="troll" data-uid="' + esc(uid) + '">🎯 Troll</button>';
     return '<div class="card' + (isBanned ? " is-banned" : "") + (isRecent ? " off" : "") + '">' +
       '<div class="top">' +
         avatarHtml(uid, d.displayName || d.username) +
         '<div class="info">' +
           '<div class="name">' + esc(d.displayName || d.username) + '</div>' +
           '<div class="detail">@' + esc(d.username) + ' · ID ' + esc(uid) + '</div>' +
-          tagBadge +
           '<div class="detail">🎮 ' + esc(d.game || ("Place " + d.placeId)) + '</div>' +
           '<div class="detail">⚙️ ' + esc(d.executor || "?") + '</div>' +
           (!isRecent && job ? '<div class="detail job" data-job="' + esc(job) + '" title="Clic para copiar JobId">🪪 ' + esc(String(job).slice(0, 8)) + '… <span class="copy">copiar</span></div>' : "") +
@@ -482,7 +399,6 @@
     else if (act === "scare") doScare(uid);
     else if (act === "music") doMusic(uid);
     else if (act === "troll") openTrollModal(uid);
-    else if (act === "tag") openTagPopup(uid);
   });
 
   var trollModalUid = null;
@@ -555,7 +471,6 @@
     else if (act === "scare") doScare(uid);
     else if (act === "music") doMusic(uid);
     else if (act === "troll") openTrollModal(uid);
-    else if (act === "tag") openTagPopup(uid);
   });
 
   document.getElementById("search").addEventListener("input", render);
@@ -580,8 +495,6 @@
 
   var fails = 0, lockedUntil = 0;
 
-  var myUid = "11218097476";
-
   function startApp() {
     document.getElementById("lock").style.display = "none";
     db.ref("presence").on("value", function(snap) {
@@ -590,10 +503,6 @@
     });
     db.ref("bans").on("value", function(snap) {
       bans = snap.val() || {};
-      render();
-    });
-    db.ref("tags/" + myUid).on("value", function(snap) {
-      myTags = snap.val() || {};
       render();
     });
     setInterval(render, 5000);
