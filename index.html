@@ -218,18 +218,22 @@
     } catch (e) {}
   }
 
-  var AVATAR_URL = "https://www.roblox.com/headshot-thumbnail/image?userId=";
-
   function loadAvatar(uid) {
     if (avatarCache[uid]) return;
+    var fromFirebase = cache[uid] && cache[uid].avatarUrl;
+    if (fromFirebase) {
+      avatarCache[uid] = fromFirebase;
+      render();
+      return;
+    }
     avatarCache[uid] = "pending";
     var img = new Image();
     img.onload = function() {
-      avatarCache[uid] = AVATAR_URL + encodeURIComponent(uid) + "&width=150&height=150&format=png";
+      avatarCache[uid] = "https://www.roblox.com/headshot-thumbnail/image?userId=" + encodeURIComponent(uid) + "&width=150&height=150&format=png";
       render();
     };
     img.onerror = function() { avatarCache[uid] = "letter"; };
-    img.src = AVATAR_URL + encodeURIComponent(uid) + "&width=150&height=150&format=png";
+    img.src = "https://www.roblox.com/headshot-thumbnail/image?userId=" + encodeURIComponent(uid) + "&width=150&height=150&format=png";
   }
 
   function avatarHtml(uid, name) {
@@ -402,13 +406,13 @@
     if (cached && cached !== "pending" && cached !== "letter") {
       img.src = cached; img.style.display = "block";
     } else {
-      img.style.display = "none";
-      var mImg = new Image();
-      mImg.onload = function() {
-        avatarCache[uid] = AVATAR_URL + encodeURIComponent(uid) + "&width=150&height=150&format=png";
-        img.src = avatarCache[uid]; img.style.display = "block";
-      };
-      mImg.src = AVATAR_URL + encodeURIComponent(uid) + "&width=150&height=150&format=png";
+      var fromFirebase = cache[uid] && cache[uid].avatarUrl;
+      if (fromFirebase) {
+        avatarCache[uid] = fromFirebase;
+        img.src = fromFirebase; img.style.display = "block";
+      } else {
+        img.style.display = "none";
+      }
     }
     document.getElementById("trollModal").classList.add("show");
   }
