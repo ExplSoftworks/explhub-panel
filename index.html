@@ -218,22 +218,30 @@
     } catch (e) {}
   }
 
+  var PROXY = "https://api.allorigins.win/get?url=";
+
   function loadAvatar(uid) {
     if (avatarCache[uid]) return;
     var fromFirebase = cache[uid] && cache[uid].avatarUrl;
-    if (fromFirebase) {
+    if (fromFirebase && fromFirebase !== "" && fromFirebase.indexOf("rbxthumb://") === -1) {
       avatarCache[uid] = fromFirebase;
       render();
       return;
     }
     avatarCache[uid] = "pending";
-    var img = new Image();
-    img.onload = function() {
-      avatarCache[uid] = "https://www.roblox.com/headshot-thumbnail/image?userId=" + encodeURIComponent(uid) + "&width=150&height=150&format=png";
-      render();
-    };
-    img.onerror = function() { avatarCache[uid] = "letter"; };
-    img.src = "https://www.roblox.com/headshot-thumbnail/image?userId=" + encodeURIComponent(uid) + "&width=150&height=150&format=png";
+    var apiUrl = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false";
+    fetch(PROXY + encodeURIComponent(apiUrl))
+      .then(function(r) { return r.json(); })
+      .then(function(wrapped) {
+        var data = typeof wrapped.contents === "string" ? JSON.parse(wrapped.contents) : wrapped.contents;
+        if (data && data.data && data.data[0] && data.data[0].imageUrl) {
+          avatarCache[uid] = data.data[0].imageUrl;
+        } else {
+          avatarCache[uid] = "letter";
+        }
+        render();
+      })
+      .catch(function() { avatarCache[uid] = "letter"; render(); });
   }
 
   function avatarHtml(uid, name) {
@@ -407,11 +415,20 @@
       img.src = cached; img.style.display = "block";
     } else {
       var fromFirebase = cache[uid] && cache[uid].avatarUrl;
-      if (fromFirebase) {
+      if (fromFirebase && fromFirebase !== "" && fromFirebase.indexOf("rbxthumb://") === -1) {
         avatarCache[uid] = fromFirebase;
         img.src = fromFirebase; img.style.display = "block";
       } else {
-        img.style.display = "none";
+        var apiUrl = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false";
+        fetch(PROXY + encodeURIComponent(apiUrl))
+          .then(function(r) { return r.json(); })
+          .then(function(wrapped) {
+            var data = typeof wrapped.contents === "string" ? JSON.parse(wrapped.contents) : wrapped.contents;
+            if (data && data.data && data.data[0] && data.data[0].imageUrl) {
+              avatarCache[uid] = data.data[0].imageUrl;
+              img.src = data.data[0].imageUrl; img.style.display = "block";
+            }
+          }).catch(function() {});
       }
     }
     document.getElementById("trollModal").classList.add("show");
