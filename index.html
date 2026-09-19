@@ -3,143 +3,605 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Explhub · Usuarios en tiempo real</title>
+<title>Explhub · Panel de Control</title>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg-dark: #0a0e17;
+    --bg-card: rgba(22, 27, 34, 0.7);
+    --bg-card-hover: rgba(30, 36, 46, 0.85);
+    --border: rgba(48, 54, 61, 0.8);
+    --border-hover: rgba(88, 166, 255, 0.5);
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --text-dim: #6e7681;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #db6d28;
+    --pink: #f778ba;
+    --gradient-1: linear-gradient(135deg, #58a6ff, #bc8cff);
+    --gradient-2: linear-gradient(135deg, #238636, #2ea043);
+    --gradient-danger: linear-gradient(135deg, #da3633, #f85149);
+  }
+  
   body {
-    background: radial-gradient(1200px 600px at 20% -10%, #1b2340 0%, #0d1117 55%) fixed, #0d1117;
-    color: #e6edf3; font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; min-height: 100vh;
+    background: 
+      radial-gradient(1200px 800px at 10% -10%, rgba(88, 166, 255, 0.15) 0%, transparent 50%),
+      radial-gradient(1000px 600px at 90% 10%, rgba(188, 140, 255, 0.12) 0%, transparent 50%),
+      radial-gradient(800px 800px at 50% 100%, rgba(35, 134, 54, 0.08) 0%, transparent 50%),
+      #0a0e17;
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+    padding: 24px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
   }
-  header.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 6px; }
-  h1 { font-size: 24px; background: linear-gradient(90deg, #58a6ff, #bc8cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  
+  /* === TOPBAR === */
+  header.topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  
+  .logo { display: flex; align-items: center; gap: 12px; }
+  
+  .logo-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: var(--gradient-1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 24px rgba(88, 166, 255, 0.4);
+  }
+  
+  h1 {
+    font-size: 22px; font-weight: 800;
+    background: var(--gradient-1);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; letter-spacing: -0.3px;
+  }
+  
+  .subtitle { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  
   .spacer { flex: 1; }
-  .search { background: #161b22; border: 1px solid #30363d; color: #fff; border-radius: 10px; padding: 8px 12px; font-size: 13px; width: 220px; outline: none; }
-  .search:focus { border-color: #58a6ff; }
-  .iconbtn { background: #161b22; border: 1px solid #30363d; color: #fff; border-radius: 10px; padding: 8px 12px; font-size: 14px; cursor: pointer; }
-  .iconbtn:hover { border-color: #58a6ff; }
-  .sub { color: #8b949e; font-size: 13px; margin-bottom: 16px; }
-  .count { display: inline-block; background: linear-gradient(90deg, #238636, #2ea043); border-radius: 20px; padding: 5px 16px; font-weight: bold; font-size: 14px; margin-bottom: 18px; box-shadow: 0 0 18px rgba(46,160,67,.35); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+  
+  .search-wrap { position: relative; }
+  
+  .search {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 10px 14px 10px 38px;
+    font-size: 13px;
+    width: 260px;
+    outline: none;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  
+  .search:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15); }
+  
+  .search-icon {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim); font-size: 14px; pointer-events: none;
+  }
+  
+  .iconbtn {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .iconbtn:hover {
+    border-color: var(--blue);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
+  }
+  
+  /* === STATS BAR === */
+  .stats-bar {
+    display: flex; gap: 12px; margin: 20px 0; flex-wrap: wrap;
+  }
+  
+  .stat {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+    transition: all 0.2s;
+    min-width: 150px;
+    cursor: pointer;
+  }
+  
+  .stat:hover { transform: translateY(-2px); border-color: var(--border-hover); }
+  .stat.active { border-color: var(--blue); box-shadow: 0 0 20px rgba(88, 166, 255, 0.2); }
+  
+  .stat-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  
+  .stat-icon.online { background: rgba(63, 185, 80, 0.15); box-shadow: 0 0 20px rgba(63, 185, 80, 0.2); }
+  .stat-icon.total { background: rgba(88, 166, 255, 0.15); box-shadow: 0 0 20px rgba(88, 166, 255, 0.2); }
+  .stat-icon.banned { background: rgba(248, 81, 73, 0.15); box-shadow: 0 0 20px rgba(248, 81, 73, 0.2); }
+  .stat-icon.offline { background: rgba(139, 148, 158, 0.15); box-shadow: 0 0 20px rgba(139, 148, 158, 0.2); }
+  
+  .stat-info { display: flex; flex-direction: column; }
+  .stat-value { font-size: 22px; font-weight: 800; line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+  
+  /* === GRID === */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 14px;
+  }
+  
   .card {
-    background: linear-gradient(180deg, #1a2030 0%, #141a28 100%);
-    border: 1px solid #30363d; border-radius: 14px; padding: 14px;
-    transition: transform .12s ease, border-color .12s ease;
+    background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
   }
-  .card:hover { transform: translateY(-2px); border-color: #58a6ff; }
-  .card.is-banned { border-color: #da3633; }
-  .top { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
-  .av { position: relative; width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
+  
+  .card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--gradient-1);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-hover);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(88, 166, 255, 0.1);
+  }
+  
+  .card:hover::before { opacity: 1; }
+  
+  .card.is-banned {
+    border-color: rgba(248, 81, 73, 0.5);
+    background: linear-gradient(180deg, rgba(45, 22, 22, 0.7), rgba(22, 27, 34, 0.7));
+  }
+  
+  .card.is-banned::before { background: var(--gradient-danger); }
+  
+  .card.off { opacity: 0.55; filter: saturate(0.6); }
+  .card.off:hover { opacity: 0.85; }
+  
+  /* === CARD TOP === */
+  .top { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+  
+  .av {
+    position: relative;
+    width: 68px; height: 68px; border-radius: 50%; flex-shrink: 0;
     background: linear-gradient(135deg, #1f6feb, #8957e5);
     display: flex; align-items: center; justify-content: center;
-    font-size: 26px; font-weight: bold; color: #fff;
-    box-shadow: 0 0 0 2px #3fb950, 0 0 14px rgba(63,185,80,.4); overflow: hidden; }
-  .card.is-banned .av { box-shadow: 0 0 0 2px #da3633, 0 0 14px rgba(218,54,51,.4); }
-  .av img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; background: #21262d; }
+    font-size: 28px; font-weight: 800; color: #fff;
+    box-shadow: 0 0 0 2px var(--green), 0 0 20px rgba(63, 185, 80, 0.35);
+    overflow: hidden;
+  }
+  
+  .card.is-banned .av { box-shadow: 0 0 0 2px var(--red), 0 0 20px rgba(248, 81, 73, 0.35); }
+  .card.off .av { box-shadow: 0 0 0 2px var(--text-dim), 0 0 12px rgba(110, 118, 129, 0.2); }
+  
+  .av img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; border-radius: 50%;
+    background: #21262d;
+    object-fit: cover;
+  }
+  
   .info { min-width: 0; flex: 1; }
-  .name { font-weight: bold; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .detail { font-size: 12px; color: #9aa4b2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
-  .job { cursor: pointer; }
-  .job:hover { color: #58a6ff; }
-  .job .copy { color: #58a6ff; font-size: 11px; }
-  .online { font-size: 11px; color: #3fb950; font-weight: bold; margin-top: 2px; }
-  .banned { font-size: 11px; color: #f85149; font-weight: bold; margin-top: 2px; }
-  .btns { display: flex; flex-wrap: wrap; gap: 6px; }
-  .btns button { border: none; border-radius: 8px; padding: 7px 10px; font-size: 12px; font-weight: bold; cursor: pointer; color: #fff; transition: filter .1s; }
-  .btns button:hover { filter: brightness(1.2); }
-  .b-join { background: #1f6feb; }
-  .b-kick { background: #da3633; }
-  .b-ban { background: #6e40c9; }
-  .b-unban { background: #238636; }
-  .b-scare { background: #9e6a03; }
-  .b-music { background: #8957e5; }
-  .b-pat { background: #b3541e; }
-  .b-troll { background: linear-gradient(90deg, #da3633, #8957e5); }
-  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 9998; display: none; align-items: center; justify-content: center; }
-  .modal-bg.show { display: flex; }
-  .modal {
-    background: #161b22; border: 1px solid #30363d; border-radius: 16px;
-    width: 420px; max-width: 95vw; max-height: 85vh; overflow-y: auto; padding: 0;
+  
+  .name {
+    font-weight: 700; font-size: 16px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    letter-spacing: -0.2px;
   }
-  .modal-head { display: flex; align-items: center; gap: 14px; padding: 18px 20px 14px; border-bottom: 1px solid #30363d; }
-  .modal-av { width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0;
+  
+  .detail {
+    font-size: 12px; color: var(--text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 3px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  
+  .job { cursor: pointer; transition: color 0.15s; }
+  .job:hover { color: var(--blue); }
+  
+  .job .copy {
+    color: var(--blue); font-size: 10px;
+    background: rgba(88, 166, 255, 0.12);
+    padding: 1px 5px; border-radius: 4px; font-weight: 600;
+  }
+  
+  .online {
+    font-size: 11px; color: var(--green); font-weight: 700;
+    margin-top: 5px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  
+  .banned {
+    font-size: 11px; color: var(--red); font-weight: 700;
+    margin-top: 5px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  
+  .left {
+    font-size: 11px; color: var(--text-dim); font-weight: 600;
+    margin-top: 5px;
+  }
+  
+  .dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.5s infinite;
+    box-shadow: 0 0 8px var(--green);
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+  
+  /* === BUTTONS === */
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+  
+  .btns button {
+    border: none; border-radius: 9px;
+    padding: 8px 12px; font-size: 12px; font-weight: 700;
+    cursor: pointer; color: #fff;
+    transition: all 0.15s;
+    font-family: inherit;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  
+  .btns button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .btns button:active { transform: translateY(0); }
+  
+  .b-join { background: linear-gradient(135deg, #1f6feb, #388bfd); }
+  .b-kick { background: linear-gradient(135deg, #da3633, #f85149); }
+  .b-ban { background: linear-gradient(135deg, #6e40c9, #8957e5); }
+  .b-unban { background: linear-gradient(135deg, #238636, #2ea043); }
+  .b-scare { background: linear-gradient(135deg, #9e6a03, #db6d28); }
+  .b-music { background: linear-gradient(135deg, #8957e5, #bc8cff); }
+  .b-troll { background: linear-gradient(135deg, #da3633, #8957e5); }
+  
+  /* === MODAL === */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 9998;
+    display: none; align-items: center; justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+  
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  
+  .modal-bg.show { display: flex; }
+  
+  .modal {
+    background: linear-gradient(180deg, #161b22, #0d1117);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 460px; max-width: 95vw; max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+    animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  
+  .modal-head {
+    display: flex; align-items: center; gap: 14px;
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .modal-av {
+    width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
     background: linear-gradient(135deg, #1f6feb, #8957e5);
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: bold; color: #fff; overflow: hidden;
-    box-shadow: 0 0 0 2px #da3633, 0 0 12px rgba(218,54,51,.4); }
-  .modal-av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-  .modal-info { flex: 1; min-width: 0; }
-  .modal-name { font-weight: bold; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .modal-sub { font-size: 12px; color: #8b949e; margin-top: 2px; }
-  .modal-close { background: none; border: none; color: #8b949e; font-size: 22px; cursor: pointer; padding: 0 4px; }
-  .modal-close:hover { color: #f85149; }
-  .modal-body { padding: 16px 20px 20px; }
-  .modal-label { font-size: 11px; color: #8b949e; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
-  .troll-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .troll-grid.three { grid-template-columns: 1fr 1fr 1fr; }
-  .troll-btn {
-    border: none; border-radius: 10px; padding: 14px 10px; font-size: 13px; font-weight: bold;
-    cursor: pointer; color: #fff; display: flex; flex-direction: column; align-items: center; gap: 6px;
-    transition: filter .12s, transform .12s;
+    font-size: 26px; font-weight: 800; color: #fff;
+    overflow: hidden;
+    box-shadow: 0 0 0 2px var(--red), 0 0 20px rgba(218, 54, 51, 0.4);
+    position: relative;
   }
-  .troll-btn:hover { filter: brightness(1.2); transform: scale(1.03); }
-  .troll-btn .icon { font-size: 24px; }
+  
+  .modal-av img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .modal-info { flex: 1; min-width: 0; }
+  .modal-name { font-weight: 800; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; }
+  .modal-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  
+  .modal-close {
+    background: rgba(139, 148, 158, 0.1);
+    border: none; color: var(--text-muted);
+    font-size: 20px; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  
+  .modal-close:hover { background: rgba(248, 81, 73, 0.15); color: var(--red); }
+  
+  .modal-body { padding: 18px 22px 22px; }
+  
+  .modal-label {
+    font-size: 11px; color: var(--text-muted); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  
+  .troll-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  
+  .troll-btn {
+    border: none; border-radius: 12px;
+    padding: 14px 10px; font-size: 12px; font-weight: 700;
+    cursor: pointer; color: #fff;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: all 0.15s;
+    font-family: inherit;
+    position: relative; overflow: hidden;
+  }
+  
+  .troll-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.1), transparent);
+    pointer-events: none;
+  }
+  
+  .troll-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    filter: brightness(1.15);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  }
+  
+  .troll-btn:active { transform: translateY(0) scale(0.98); }
+  .troll-btn .icon { font-size: 26px; }
+  
   .troll-btn.pat { background: linear-gradient(135deg, #b3541e, #da3633); }
   .troll-btn.scare { background: linear-gradient(135deg, #9e6a03, #da3633); }
   .troll-btn.noot { background: linear-gradient(135deg, #1a8fff, #3fb950); }
-  .modal-footer { text-align: center; padding: 0 20px 16px; font-size: 11px; color: #484f58; }
-  .empty { color: #8b949e; font-size: 14px; padding: 30px 0; text-align: center; }
-  h2 { font-size: 16px; color: #8b949e; margin: 22px 0 12px; }
-  .card.off { opacity: .55; }
-  .left { font-size: 11px; color: #8b949e; font-weight: bold; margin-top: 2px; }
-  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3fb950; margin-right: 5px; animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-  #lock { position: fixed; inset: 0; background: #0d1117; display: flex; align-items: center; justify-content: center; z-index: 9999; }
-  .lock-box { background: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 28px; width: 320px; text-align: center; }
-  .lock-title { font-size: 20px; font-weight: bold; margin-bottom: 6px; }
-  .lock-sub { font-size: 12px; color: #8b949e; margin-bottom: 16px; }
-  #lockPass { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #30363d; background: #0d1117; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none; }
-  #lockBtn { width: 100%; padding: 10px; border: none; border-radius: 8px; background: #238636; color: #fff; font-weight: bold; font-size: 14px; cursor: pointer; }
-  #lockBtn:hover { filter: brightness(1.15); }
-  #lockMsg { margin-top: 10px; font-size: 12px; color: #f85149; min-height: 16px; }
-  #toast {
-    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: #161b22; border: 1px solid #58a6ff; color: #fff; border-radius: 10px;
-    padding: 10px 18px; font-size: 13px; opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 10000;
+  .troll-btn.spin { background: linear-gradient(135deg, #8957e5, #bc8cff); }
+  .troll-btn.fire { background: linear-gradient(135deg, #da3633, #db6d28); }
+  .troll-btn.freeze { background: linear-gradient(135deg, #1f6feb, #58a6ff); }
+  .troll-btn.explode { background: linear-gradient(135deg, #9e6a03, #f85149); }
+  .troll-btn.ragdoll { background: linear-gradient(135deg, #6e40c9, #da3633); }
+  .troll-btn.spam { background: linear-gradient(135deg, #238636, #3fb950); }
+  .troll-btn.music { background: linear-gradient(135deg, #8957e5, #f778ba); }
+  
+  .modal-footer {
+    text-align: center;
+    padding: 0 22px 18px;
+    font-size: 11px; color: var(--text-dim);
   }
+  
+  /* === EMPTY / HEADINGS === */
+  .empty {
+    color: var(--text-muted); font-size: 14px;
+    padding: 60px 0; text-align: center;
+  }
+  
+  h2 {
+    font-size: 14px; color: var(--text-muted); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin: 28px 0 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  
+  h2::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+  
+  /* === LOCK SCREEN === */
+  #lock {
+    position: fixed; inset: 0;
+    background: 
+      radial-gradient(1000px 600px at 50% 20%, rgba(88, 166, 255, 0.15) 0%, transparent 50%),
+      #0a0e17;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  
+  .lock-box {
+    background: linear-gradient(180deg, #161b22, #0d1117);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 32px;
+    width: 380px;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 60px rgba(88, 166, 255, 0.1);
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  .lock-icon {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: var(--gradient-1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; margin: 0 auto 18px;
+    box-shadow: 0 0 32px rgba(88, 166, 255, 0.4);
+  }
+  
+  .lock-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .lock-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  
+  #lockPass {
+    width: 100%; padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: #0d1117; color: var(--text);
+    font-size: 14px; margin-bottom: 12px;
+    outline: none; font-family: inherit;
+    transition: all 0.2s;
+  }
+  
+  #lockPass:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15); }
+  
+  #lockBtn {
+    width: 100%; padding: 12px; border: none;
+    border-radius: 12px;
+    background: var(--gradient-2);
+    color: #fff; font-weight: 800; font-size: 14px;
+    cursor: pointer; transition: all 0.2s;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+  }
+  
+  #lockBtn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(35, 134, 54, 0.4); }
+  
+  #lockMsg {
+    margin-top: 14px; font-size: 12px;
+    color: var(--red); min-height: 16px; font-weight: 600;
+  }
+  
+  /* === TOAST === */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: linear-gradient(180deg, #161b22, #0d1117);
+    border: 1px solid var(--blue);
+    color: #fff;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 13px; font-weight: 600;
+    opacity: 0; pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10000;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(88, 166, 255, 0.2);
+  }
+  
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  
+  /* === SCROLLBAR === */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #0d1117; }
+  ::-webkit-scrollbar-thumb {
+    background: #30363d; border-radius: 5px;
+    border: 2px solid #0d1117;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #58a6ff; }
 </style>
 </head>
 <body>
+  <!-- LOCK SCREEN -->
   <div id="lock">
     <div class="lock-box">
-      <div class="lock-title">🔒 Panel privado</div>
-      <div class="lock-sub">Solo el dueño puede ver y controlar usuarios.</div>
+      <div class="lock-icon">🔒</div>
+      <div class="lock-title">Panel Privado</div>
+      <div class="lock-sub">Solo el dueño puede ver y controlar usuarios</div>
       <input type="password" id="lockPass" placeholder="Contraseña" autocomplete="off">
-      <button id="lockBtn">Entrar</button>
+      <button id="lockBtn">Desbloquear</button>
       <div id="lockMsg"></div>
     </div>
   </div>
 
+  <!-- TOPBAR -->
   <header class="topbar">
-    <h1>Explhub · Usuarios en tiempo real</h1>
+    <div class="logo">
+      <div class="logo-icon">👻</div>
+      <div>
+        <h1>Explhub Panel</h1>
+        <div class="subtitle">Creado por Xplort ✓ · Tiempo real</div>
+      </div>
+    </div>
     <div class="spacer"></div>
-    <input class="search" id="search" placeholder="🔍 Buscar usuario...">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search" id="search" placeholder="Buscar usuario...">
+    </div>
     <button class="iconbtn" id="soundBtn" title="Aviso de nuevo usuario">🔔</button>
   </header>
-  <div class="sub">Creado por Xplort ✓ · Se actualiza solo · Panel de admin</div>
-  <div class="count"><span class="dot"></span><span id="onlineCount">0</span> en línea</div>
+
+  <!-- STATS BAR (también sirven como filtros) -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat active" data-filter="all">
+      <div class="stat-icon total">👥</div>
+      <div class="stat-info">
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">Todos</div>
+      </div>
+    </div>
+    <div class="stat" data-filter="online">
+      <div class="stat-icon online">🟢</div>
+      <div class="stat-info">
+        <div class="stat-value" id="statOnline">0</div>
+        <div class="stat-label">En línea</div>
+      </div>
+    </div>
+    <div class="stat" data-filter="offline">
+      <div class="stat-icon offline">💤</div>
+      <div class="stat-info">
+        <div class="stat-value" id="statOffline">0</div>
+        <div class="stat-label">Desconectados</div>
+      </div>
+    </div>
+    <div class="stat" data-filter="banned">
+      <div class="stat-icon banned">⛔</div>
+      <div class="stat-info">
+        <div class="stat-value" id="statBanned">0</div>
+        <div class="stat-label">Baneados</div>
+      </div>
+    </div>
+  </div>
+
   <div class="grid" id="grid"></div>
-  <div class="empty" id="empty" style="display:none">Nadie usando el script ahora mismo.</div>
+  <div class="empty" id="empty" style="display:none">Nadie aquí con este filtro.</div>
   <h2 id="offTitle" style="display:none">Desconectados recientemente</h2>
   <div class="grid" id="gridOff"></div>
 
+  <!-- TOAST -->
   <div id="toast"></div>
+
+  <!-- MODAL TROLL -->
   <div class="modal-bg" id="trollModal">
     <div class="modal">
       <div class="modal-head">
-        <div class="modal-av" id="modalAv"><span id="modalLetter">?</span><img id="modalImg" style="display:none"></div>
+        <div class="modal-av" id="modalAv">
+          <span id="modalLetter">?</span>
+          <img id="modalImg" style="display:none">
+        </div>
         <div class="modal-info">
           <div class="modal-name" id="modalName">Usuario</div>
           <div class="modal-sub" id="modalSub">@user · ID 0</div>
@@ -147,11 +609,18 @@
         <button class="modal-close" id="modalClose">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="modal-label">Scripts Troll</div>
-        <div class="troll-grid" style="grid-template-columns:1fr">
+        <div class="modal-label">💀 Scripts Troll</div>
+        <div class="troll-grid" id="trollGrid">
           <button class="troll-btn pat" data-troll="patricio"><span class="icon">🐽</span>Patricio</button>
-          <button class="troll-btn noot" data-troll="nootnoot"><span class="icon">🐧</span>Noot Noot</button>
           <button class="troll-btn scare" data-troll="jumpscare"><span class="icon">👹</span>Jumpscare</button>
+          <button class="troll-btn noot" data-troll="nootnoot"><span class="icon">🐧</span>Noot Noot</button>
+          <button class="troll-btn spin" data-troll="spin"><span class="icon">🌀</span>Spin</button>
+          <button class="troll-btn fire" data-troll="fire"><span class="icon">🔥</span>Fire</button>
+          <button class="troll-btn freeze" data-troll="freeze"><span class="icon">❄️</span>Freeze</button>
+          <button class="troll-btn explode" data-troll="explode"><span class="icon">💥</span>Explode</button>
+          <button class="troll-btn ragdoll" data-troll="ragdoll"><span class="icon">🤸</span>Ragdoll</button>
+          <button class="troll-btn spam" data-troll="spam"><span class="icon">💬</span>Spam</button>
+          <button class="troll-btn music" data-troll="music"><span class="icon">🎵</span>Music</button>
         </div>
       </div>
       <div class="modal-footer">Creado por Xplort ✓</div>
@@ -159,11 +628,15 @@
   </div>
 
 <script>
+  // ============================================================
+  // CONFIGURACIÓN
+  // ============================================================
   var ADMIN_KEY = "EXPLHUB_XPLORT_2026";
   var EXPECTED_HASH = "8a504d6625ad4323decbec43f1415168a98897c3199e8265cf949a5004a84025";
 
-  var NOOT_NOOT_SCRIPT = 'pingudecal = "http://www.roblox.com/asset/?id=382332426"\nlocal didpingu = true\n\nfor i,v in pairs(game.Players:GetChildren()) do\n\tif v:IsA("Player") then\n\t\tlocal nooties = Instance.new("Sound", workspace)\n\t\tnooties.SoundId = "rbxassetid://109928136872365"\n\t\tnooties.Volume = 1\n\t\tnooties.Looped = true\n\t\tnooties.PlaybackSpeed = 0.97\n\n\t\tlocal pitch = Instance.new("PitchShiftSoundEffect")\n\t\tpitch.Octave = 1.22\n\t\tpitch.Parent = nooties\n\n\t\tnooties:Play()\n\tend\nend\n\nwait(12)\n\nlocal Sky = Instance.new("Sky", game.Lighting)\nSky.SkyboxBk = pingudecal\nSky.SkyboxDn = pingudecal\nSky.SkyboxFt = pingudecal\nSky.SkyboxLf = pingudecal\nSky.SkyboxRt = pingudecal\nSky.SkyboxUp = pingudecal\n\nlocal function modelasd()\n\tfor i,v in pairs(workspace:GetChildren()) do\n\t\tif v:IsA("Model") then\n\t\t\tfor i,a in pairs(v:GetChildren()) do\n\t\t\t\tlocal top = Instance.new("Decal",a)\n\t\t\t\ttop.Face = "Top"\n\t\t\t\ttop.Texture = pingudecal\n\n\t\t\t\tlocal btm = Instance.new("Decal",a)\n\t\t\t\tbtm.Face = "Bottom"\n\t\t\t\tbtm.Texture = pingudecal\n\n\t\t\t\tlocal lft = Instance.new("Decal",a)\n\t\t\t\tlft.Face = "Left"\n\t\t\t\tlft.Texture = pingudecal\n\n\t\t\t\tlocal rft = Instance.new("Decal",a)\n\t\t\t\trft.Face = "Right"\n\t\t\t\trft.Texture = pingudecal\n\n\t\t\t\tlocal frnt = Instance.new("Decal",a)\n\t\t\t\tfrnt.Face = "Front"\n\t\t\t\tfrnt.Texture = pingudecal\n\n\t\t\t\tlocal bk = Instance.new("Decal",a)\n\t\t\t\tbk.Face = "Back"\n\t\t\t\tbk.Texture = pingudecal\n\n\t\t\t\tlocal VTest = Instance.new("ParticleEmitter")\n\t\t\t\tVTest.Parent = a\n\t\t\t\tVTest.Texture = pingudecal\n\t\t\t\tVTest.Speed = NumberRange.new(200)\n\t\t\t\tVTest.Rate = 200\n\t\t\t\tVTest.Size = NumberSequence.new(10000,10000)\n\t\t\t\tVTest.Lifetime = NumberRange.new(1000)\n\n\t\t\t\tlocal pepe = coroutine.create(function()\n\t\t\t\t\twhile wait() do\n\t\t\t\t\t\tlocal Explosion = Instance.new("Explosion",a)\n\t\t\t\t\t\tExplosion.BlastRadius = 10000\n\t\t\t\t\tend\n\t\t\t\tend)\n\t\t\t\tcoroutine.resume(pepe)\n\t\t\tend\n\t\tend\n\tend\nend\n\nlocal function partasd()\n\tfor i,a in pairs(workspace:GetChildren()) do\n\t\tlocal top = Instance.new("Decal",a)\n\t\ttop.Face = "Top"\n\t\ttop.Texture = pingudecal\n\n\t\tlocal btm = Instance.new("Decal",a)\n\t\tbtm.Face = "Bottom"\n\t\tbtm.Texture = pingudecal\n\n\t\tlocal lft = Instance.new("Decal",a)\n\t\tlft.Face = "Left"\n\t\tlft.Texture = pingudecal\n\n\t\tlocal rft = Instance.new("Decal",a)\n\t\trft.Face = "Right"\n\t\trft.Texture = pingudecal\n\n\t\tlocal frnt = Instance.new("Decal",a)\n\t\tfrnt.Face = "Front"\n\t\tfrnt.Texture = pingudecal\n\n\t\tlocal bk = Instance.new("Decal",a)\n\t\tbk.Face = "Back"\n\t\tbk.Texture = pingudecal\n\n\t\tlocal VTest = Instance.new("ParticleEmitter")\n\t\tVTest.Parent = a\n\t\tVTest.Texture = pingudecal\n\t\tVTest.Speed = NumberRange.new(200)\n\t\tVTest.Rate = 200\n\t\tVTest.Lifetime = NumberRange.new(1000)\n\t\tVTest.Size = NumberSequence.new(10000,10000)\n\n\t\tlocal pepe = coroutine.create(function()\n\t\t\twhile wait() do\n\t\t\t\tif a.Name ~= "Head" or "Torso" or "Left Arm" or "Right Arm" or "Left Leg" or "Right Leg" then\n\t\t\t\t\tlocal Explosion = Instance.new("Explosion",a)\n\t\t\t\t\tExplosion.BlastRadius = 10000\n\t\t\t\tend\n\t\t\tend\n\t\tend)\n\t\tcoroutine.resume(pepe)\n\tend\nend\n\npartasd()\nmodelasd()';
-
+  // ============================================================
+  // FIREBASE
+  // ============================================================
   firebase.initializeApp({
     databaseURL: "https://explhub-default-rtdb.firebaseio.com"
   });
@@ -172,9 +645,13 @@
   var bans = {};
   var avatarCache = {};
   var seenUids = null;
+  var currentFilter = "all";
   var soundOn = true;
   try { soundOn = localStorage.getItem("explhub_sound") !== "off"; } catch (e) {}
 
+  // ============================================================
+  // UTILIDADES
+  // ============================================================
   function timeAgo(ts) {
     var s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
     if (s < 5) return "ahora mismo";
@@ -192,7 +669,7 @@
     t.textContent = msg;
     t.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function() { t.classList.remove("show"); }, 2200);
+    toastTimer = setTimeout(function() { t.classList.remove("show"); }, 2400);
   }
 
   function copyText(txt, okMsg) {
@@ -219,22 +696,28 @@
     } catch (e) {}
   }
 
-  var PROXY = "https://api.allorigins.win/get?url=";
-
+  // ============================================================
+  // AVATARES — usando roproxy.com (el proxy oficial para Roblox)
+  // ============================================================
   function loadAvatar(uid) {
-    if (avatarCache[uid]) return;
-    var fromFirebase = cache[uid] && cache[uid].avatarUrl;
-    if (fromFirebase && fromFirebase !== "" && fromFirebase.indexOf("rbxthumb://") === -1) {
-      avatarCache[uid] = fromFirebase;
-      render();
-      return;
-    }
+    // Evitar cargas duplicadas
+    if (avatarCache[uid] && avatarCache[uid] !== "pending") return;
     avatarCache[uid] = "pending";
-    var apiUrl = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false";
-    fetch(PROXY + encodeURIComponent(apiUrl))
-      .then(function(r) { return r.json(); })
-      .then(function(wrapped) {
-        var data = typeof wrapped.contents === "string" ? JSON.parse(wrapped.contents) : wrapped.contents;
+
+    // Construir la URL de la API de Roblox
+    var robloxApiUrl = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" 
+                     + encodeURIComponent(uid) 
+                     + "&size=150x150&format=Png&isCircular=false";
+
+    // Reemplazar el dominio por roproxy (el proxy que SÍ funciona con Roblox)
+    var proxyUrl = robloxApiUrl.replace("thumbnails.roblox.com", "thumbnails.roproxy.com");
+
+    fetch(proxyUrl)
+      .then(function(r) {
+        if (!r.ok) throw new Error("Proxy response not ok: " + r.status);
+        return r.json();
+      })
+      .then(function(data) {
         if (data && data.data && data.data[0] && data.data[0].imageUrl) {
           avatarCache[uid] = data.data[0].imageUrl;
         } else {
@@ -242,19 +725,46 @@
         }
         render();
       })
-      .catch(function() { avatarCache[uid] = "letter"; render(); });
+      .catch(function(err) {
+        console.warn("[Avatar] Falló roproxy para " + uid + ":", err.message);
+        // Fallback: intentar con CORS proxy alternativo
+        var fallbackUrl = "https://corsproxy.io/?" + encodeURIComponent(robloxApiUrl);
+        fetch(fallbackUrl)
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data && data.data && data.data[0] && data.data[0].imageUrl) {
+              avatarCache[uid] = data.data[0].imageUrl;
+            } else {
+              avatarCache[uid] = "letter";
+            }
+            render();
+          })
+          .catch(function() {
+            avatarCache[uid] = "letter";
+            render();
+          });
+      });
   }
 
   function avatarHtml(uid, name) {
     var letter = esc((name || "?").charAt(0).toUpperCase());
     var cached = avatarCache[uid];
+    
+    // Si ya tenemos imagen, mostrarla (con la letra como fondo por si tarda en cargar)
     if (cached && cached !== "pending" && cached !== "letter") {
-      return '<div class="av"><span>' + letter + '</span><img src="' + cached + '" loading="lazy" onerror="this.remove()"></div>';
+      return '<div class="av"><span>' + letter + '</span><img src="' + cached + '" loading="lazy" onerror="this.style.display=\'none\'"></div>';
     }
+    
+    // Si no, iniciar la carga
     if (!cached) loadAvatar(uid);
+    
+    // Mientras tanto, mostrar la letra
     return '<div class="av"><span>' + letter + '</span></div>';
   }
 
+  // ============================================================
+  // COMANDOS
+  // ============================================================
   function pushCmd(uid, action, args) {
     db.ref("commands/" + uid).push({
       action: action,
@@ -274,28 +784,41 @@
   function doKick(uid) {
     var r = prompt("Motivo del kick (vacío = mensaje por defecto):", "") || "";
     pushCmd(uid, "kick", { reason: r });
-    toast("Kick enviado ✓");
+    toast("👢 Kick enviado");
   }
 
   function doBan(uid) {
+    var name = (cache[uid] || {}).username || uid;
+    if (!confirm("¿Banear a " + name + "?")) return;
     var r = prompt("Motivo del baneo:", "Fuiste baneado de Explhub.") || "Fuiste baneado de Explhub.";
+    
     db.ref("bans/" + uid).set({
       reason: r,
-      at: firebase.database.ServerValue.TIMESTAMP
+      at: firebase.database.ServerValue.TIMESTAMP,
+      username: (cache[uid] || {}).username || uid
+    }).then(function() {
+      pushCmd(uid, "kick", { reason: "⛔ " + r });
+      toast("⛔ " + name + " baneado");
+    }).catch(function(err) {
+      toast("❌ Error al banear: " + err.message);
     });
-    toast("Baneado ✓");
   }
 
   function doUnban(uid) {
-    db.ref("bans/" + uid).remove();
-    toast("Desbaneado ✓");
+    var name = (cache[uid] || {}).username || uid;
+    if (!confirm("¿Desbanear a " + name + "?")) return;
+    db.ref("bans/" + uid).remove().then(function() {
+      toast("✅ " + name + " desbaneado");
+    }).catch(function(err) {
+      toast("❌ Error al desbanear: " + err.message);
+    });
   }
 
   function doScare(uid) {
     var img = prompt("Image ID del jumpscare (vacío = imagen por defecto):", "10509128628") || "";
     var s = prompt("Sound ID del susto (opcional, vacío = solo visual):", "") || "";
     pushCmd(uid, "jumpscare", { imageId: img, soundId: s });
-    toast("Jumpscare enviado ✓");
+    toast("👹 Jumpscare enviado");
   }
 
   function doMusic(uid) {
@@ -303,9 +826,12 @@
     var vol = "3";
     if (id !== "") vol = prompt("Volumen (1-10):", "3") || "3";
     pushCmd(uid, "music", { assetId: id, volume: vol });
-    toast(id === "" ? "Música detenida ✓" : "Música enviada ✓");
+    toast(id === "" ? "🎵 Música detenida" : "🎵 Música enviada");
   }
 
+  // ============================================================
+  // CARD HTML
+  // ============================================================
   function cardHtml(uid, d, isRecent) {
     var isBanned = !!bans[uid];
     var job = d.jobId || "";
@@ -318,15 +844,15 @@
       status = '<div class="online"><span class="dot"></span>en línea · ' + timeAgo(d.lastSeen) + '</div>';
     }
     var banBtn = isBanned
-      ? '<button class="b-unban" data-act="unban" data-uid="' + esc(uid) + '">Desbanear</button>'
-      : '<button class="b-ban" data-act="ban" data-uid="' + esc(uid) + '">Banear</button>';
+      ? '<button class="b-unban" data-act="unban" data-uid="' + esc(uid) + '">✅ Desbanear</button>'
+      : '<button class="b-ban" data-act="ban" data-uid="' + esc(uid) + '">⛔ Banear</button>';
     var btns = isRecent
       ? banBtn
-      : '<button class="b-join" data-act="join" data-uid="' + esc(uid) + '">Unirse</button>' +
-        '<button class="b-kick" data-act="kick" data-uid="' + esc(uid) + '">Kick</button>' +
+      : '<button class="b-join" data-act="join" data-uid="' + esc(uid) + '">🔗 Unirse</button>' +
+        '<button class="b-kick" data-act="kick" data-uid="' + esc(uid) + '">👢 Kick</button>' +
         banBtn +
-        '<button class="b-scare" data-act="scare" data-uid="' + esc(uid) + '">Jumpscare</button>' +
-        '<button class="b-music" data-act="music" data-uid="' + esc(uid) + '">Música</button>' +
+        '<button class="b-scare" data-act="scare" data-uid="' + esc(uid) + '">👹 Jumpscare</button>' +
+        '<button class="b-music" data-act="music" data-uid="' + esc(uid) + '">🎵 Música</button>' +
         '<button class="b-troll" data-act="troll" data-uid="' + esc(uid) + '">🎯 Troll</button>';
     return '<div class="card' + (isBanned ? " is-banned" : "") + (isRecent ? " off" : "") + '">' +
       '<div class="top">' +
@@ -343,21 +869,44 @@
       '<div class="btns">' + btns + '</div></div>';
   }
 
+  // ============================================================
+  // RENDER CON FILTROS
+  // ============================================================
   function render() {
     var grid = document.getElementById("grid");
     var gridOff = document.getElementById("gridOff");
     var q = (document.getElementById("search").value || "").toLowerCase();
     var now = Date.now();
-    var online = [], recent = [];
+    var online = [], recent = [], bannedList = [];
+    
     Object.keys(cache).forEach(function(uid) {
       var u = cache[uid];
       if (!u || !u.lastSeen) return;
       var age = now - u.lastSeen;
-      if (age < 35000) online.push({ uid: uid, d: u });
-      else if (age < 600000) recent.push({ uid: uid, d: u });
+      var isBanned = !!bans[uid];
+      
+      if (isBanned) {
+        bannedList.push({ uid: uid, d: u, banned: true });
+      } else if (age < 35000) {
+        online.push({ uid: uid, d: u });
+      } else if (age < 600000) {
+        recent.push({ uid: uid, d: u });
+      }
     });
+    
+    Object.keys(bans).forEach(function(uid) {
+      if (cache[uid] && cache[uid].lastSeen) {
+        var age = now - cache[uid].lastSeen;
+        if (age < 35000 && !bannedList.find(function(b) { return b.uid === uid; })) {
+          bannedList.push({ uid: uid, d: cache[uid], banned: true });
+        }
+      }
+    });
+    
     online.sort(function(a, b) { return b.d.lastSeen - a.d.lastSeen; });
     recent.sort(function(a, b) { return b.d.lastSeen - a.d.lastSeen; });
+    bannedList.sort(function(a, b) { return (b.d.lastSeen || 0) - (a.d.lastSeen || 0); });
+    
     if (seenUids === null) {
       seenUids = {};
       online.forEach(function(u) { seenUids[u.uid] = 1; });
@@ -370,19 +919,77 @@
         }
       });
     }
+    
+    document.getElementById("statOnline").textContent = online.length;
+    document.getElementById("statTotal").textContent = Object.keys(cache).length;
+    document.getElementById("statOffline").textContent = recent.length;
+    document.getElementById("statBanned").textContent = Object.keys(bans).length;
+    
     function match(u) {
       if (!q) return true;
       var hay = ((u.d.displayName || "") + " " + (u.d.username || "") + " " + u.uid).toLowerCase();
       return hay.indexOf(q) !== -1;
     }
-    var shownOn = online.filter(match), shownOff = recent.filter(match);
-    document.getElementById("onlineCount").textContent = online.length;
-    document.getElementById("empty").style.display = online.length ? "none" : "block";
-    document.getElementById("offTitle").style.display = shownOff.length ? "block" : "none";
-    grid.innerHTML = shownOn.map(function(u) { return cardHtml(u.uid, u.d, false); }).join("");
-    gridOff.innerHTML = shownOff.map(function(u) { return cardHtml(u.uid, u.d, true); }).join("");
+    
+    var filterOnline = [], filterOff = [];
+    
+    if (currentFilter === "all") {
+      filterOnline = online.filter(match);
+      filterOff = recent.filter(match);
+    } else if (currentFilter === "online") {
+      filterOnline = online.filter(match);
+      filterOff = [];
+    } else if (currentFilter === "offline") {
+      filterOnline = [];
+      filterOff = recent.filter(match);
+    } else if (currentFilter === "banned") {
+      filterOnline = bannedList.filter(match);
+      filterOff = [];
+    }
+    
+    if (currentFilter === "all") {
+      bannedList.forEach(function(b) {
+        if (match(b) && !filterOnline.find(function(x) { return x.uid === b.uid; })) {
+          filterOnline.push(b);
+        }
+      });
+    }
+    
+    document.getElementById("empty").style.display = (filterOnline.length + filterOff.length) ? "none" : "block";
+    document.getElementById("empty").textContent = 
+      currentFilter === "all" ? "Nadie usando el script ahora mismo." :
+      currentFilter === "online" ? "Nadie en línea ahora mismo." :
+      currentFilter === "offline" ? "Nadie desconectado recientemente." :
+      "No hay usuarios baneados.";
+    
+    document.getElementById("offTitle").style.display = filterOff.length ? "block" : "none";
+    document.getElementById("offTitle").textContent = 
+      currentFilter === "all" ? "Desconectados recientemente" : "Desconectados";
+    
+    grid.innerHTML = filterOnline.map(function(u) { return cardHtml(u.uid, u.d, false); }).join("");
+    gridOff.innerHTML = filterOff.map(function(u) { return cardHtml(u.uid, u.d, true); }).join("");
   }
 
+  // ============================================================
+  // FILTROS
+  // ============================================================
+  document.getElementById("statsBar").addEventListener("click", function(e) {
+    var stat = e.target.closest(".stat");
+    if (!stat) return;
+    var filter = stat.getAttribute("data-filter");
+    if (!filter) return;
+    
+    currentFilter = filter;
+    
+    document.querySelectorAll(".stat").forEach(function(s) { s.classList.remove("active"); });
+    stat.classList.add("active");
+    
+    render();
+  });
+
+  // ============================================================
+  // EVENTOS DE CLICK
+  // ============================================================
   document.body.addEventListener("click", function(e) {
     var j = e.target.closest(".job");
     if (j && j.getAttribute("data-job")) {
@@ -394,13 +1001,16 @@
     var act = b.getAttribute("data-act"), uid = b.getAttribute("data-uid");
     if (act === "join") doJoin(uid);
     else if (act === "kick") doKick(uid);
-    else if (act === "ban") { if (confirm("¿Banear a " + ((cache[uid] || {}).username || uid) + "?")) doBan(uid); }
+    else if (act === "ban") doBan(uid);
     else if (act === "unban") doUnban(uid);
     else if (act === "scare") doScare(uid);
     else if (act === "music") doMusic(uid);
     else if (act === "troll") openTrollModal(uid);
   });
 
+  // ============================================================
+  // MODAL TROLL
+  // ============================================================
   var trollModalUid = null;
   function openTrollModal(uid) {
     trollModalUid = uid;
@@ -410,69 +1020,94 @@
     document.getElementById("modalLetter").textContent = letter;
     document.getElementById("modalName").textContent = name;
     document.getElementById("modalSub").textContent = "@" + (u.username || "?") + " · ID " + uid;
+    
     var img = document.getElementById("modalImg");
     var cached = avatarCache[uid];
+    
+    // Si ya tenemos la imagen en caché
     if (cached && cached !== "pending" && cached !== "letter") {
       img.src = cached; img.style.display = "block";
     } else {
-      var fromFirebase = cache[uid] && cache[uid].avatarUrl;
-      if (fromFirebase && fromFirebase !== "" && fromFirebase.indexOf("rbxthumb://") === -1) {
-        avatarCache[uid] = fromFirebase;
-        img.src = fromFirebase; img.style.display = "block";
-      } else {
-        var apiUrl = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" + encodeURIComponent(uid) + "&size=150x150&format=Png&isCircular=false";
-        fetch(PROXY + encodeURIComponent(apiUrl))
-          .then(function(r) { return r.json(); })
-          .then(function(wrapped) {
-            var data = typeof wrapped.contents === "string" ? JSON.parse(wrapped.contents) : wrapped.contents;
+      // Cargar desde roproxy
+      var robloxApiUrl = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" 
+                       + encodeURIComponent(uid) 
+                       + "&size=150x150&format=Png&isCircular=false";
+      var proxyUrl = robloxApiUrl.replace("thumbnails.roblox.com", "thumbnails.roproxy.com");
+      
+      fetch(proxyUrl)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data && data.data && data.data[0] && data.data[0].imageUrl) {
+            avatarCache[uid] = data.data[0].imageUrl;
+            img.src = data.data[0].imageUrl; img.style.display = "block";
+          }
+        }).catch(function() {
+          var fallbackUrl = "https://corsproxy.io/?" + encodeURIComponent(robloxApiUrl);
+          fetch(fallbackUrl).then(function(r) { return r.json(); }).then(function(data) {
             if (data && data.data && data.data[0] && data.data[0].imageUrl) {
               avatarCache[uid] = data.data[0].imageUrl;
               img.src = data.data[0].imageUrl; img.style.display = "block";
             }
           }).catch(function() {});
-      }
+        });
     }
     document.getElementById("trollModal").classList.add("show");
   }
+  
   document.getElementById("modalClose").addEventListener("click", function() {
     document.getElementById("trollModal").classList.remove("show");
   });
   document.getElementById("trollModal").addEventListener("click", function(e) {
     if (e.target === this) this.classList.remove("show");
   });
-  document.body.addEventListener("click", function(e) {
+  
+  document.getElementById("trollGrid").addEventListener("click", function(e) {
     var btn = e.target.closest("[data-troll]");
-    if (btn) {
-      e.stopPropagation();
-      if (!trollModalUid) return;
-      var action = btn.getAttribute("data-troll");
-      if (action === "patricio") {
-        pushCmd(trollModalUid, "patricio", {});
-        toast("Patricio enviado ✓");
-        document.getElementById("trollModal").classList.remove("show");
-      } else if (action === "jumpscare") {
-        pushCmd(trollModalUid, "jumpscare", { imageId: "10509128628", soundId: "" });
-        toast("Jumpscare enviado ✓");
-        document.getElementById("trollModal").classList.remove("show");
-      } else if (action === "nootnoot") {
-        pushCmd(trollModalUid, "nootnoot", { script: NOOT_NOOT_SCRIPT });
-        toast("Noot Noot enviado ✓");
-        document.getElementById("trollModal").classList.remove("show");
-      }
-      return;
+    if (!btn || !trollModalUid) return;
+    var action = btn.getAttribute("data-troll");
+    
+    if (action === "patricio") {
+      pushCmd(trollModalUid, "patricio", {});
+      toast("🐽 Patricio enviado");
+    } else if (action === "jumpscare") {
+      pushCmd(trollModalUid, "jumpscare", { imageId: "10509128628", soundId: "" });
+      toast("👹 Jumpscare enviado");
+    } else if (action === "nootnoot") {
+      pushCmd(trollModalUid, "nootnoot", {});
+      toast("🐧 Noot Noot enviado");
+    } else if (action === "spin") {
+      pushCmd(trollModalUid, "spin", {});
+      toast("🌀 Spin enviado");
+    } else if (action === "fire") {
+      pushCmd(trollModalUid, "fire", {});
+      toast("🔥 Fire enviado");
+    } else if (action === "freeze") {
+      pushCmd(trollModalUid, "freeze", {});
+      toast("❄️ Freeze enviado");
+    } else if (action === "explode") {
+      pushCmd(trollModalUid, "explode", {});
+      toast("💥 Explode enviado");
+    } else if (action === "ragdoll") {
+      pushCmd(trollModalUid, "ragdoll", {});
+      toast("🤸 Ragdoll enviado");
+    } else if (action === "spam") {
+      var msg = prompt("Mensaje a spamear:", "Explhub on top") || "Explhub on top";
+      pushCmd(trollModalUid, "spam", { message: msg });
+      toast("💬 Spam enviado");
+    } else if (action === "music") {
+      var id = prompt("Sound ID de la música:", "") || "";
+      var vol = "3";
+      if (id !== "") vol = prompt("Volumen (1-10):", "3") || "3";
+      pushCmd(trollModalUid, "music", { assetId: id, volume: vol });
+      toast(id === "" ? "🎵 Música detenida" : "🎵 Música enviada");
     }
-    var b = e.target.closest("button[data-act]");
-    if (!b) return;
-    var act = b.getAttribute("data-act"), uid = b.getAttribute("data-uid");
-    if (act === "join") doJoin(uid);
-    else if (act === "kick") doKick(uid);
-    else if (act === "ban") { if (confirm("¿Banear a " + ((cache[uid] || {}).username || uid) + "?")) doBan(uid); }
-    else if (act === "unban") doUnban(uid);
-    else if (act === "scare") doScare(uid);
-    else if (act === "music") doMusic(uid);
-    else if (act === "troll") openTrollModal(uid);
+    
+    document.getElementById("trollModal").classList.remove("show");
   });
 
+  // ============================================================
+  // SEARCH Y BOTONES
+  // ============================================================
   document.getElementById("search").addEventListener("input", render);
   document.getElementById("soundBtn").addEventListener("click", function() {
     soundOn = !soundOn;
@@ -484,6 +1119,9 @@
     document.getElementById("soundBtn").textContent = soundOn ? "🔔" : "🔕";
   } catch (e) {}
 
+  // ============================================================
+  // LOGIN (SHA256)
+  // ============================================================
   function sha256hex(str) {
     var enc = new TextEncoder().encode(str);
     return crypto.subtle.digest("SHA-256", enc).then(function(buf) {
@@ -497,14 +1135,17 @@
 
   function startApp() {
     document.getElementById("lock").style.display = "none";
+    
     db.ref("presence").on("value", function(snap) {
       cache = snap.val() || {};
       render();
     });
+    
     db.ref("bans").on("value", function(snap) {
       bans = snap.val() || {};
       render();
     });
+    
     setInterval(render, 5000);
   }
 
