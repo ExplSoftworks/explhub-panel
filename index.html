@@ -1063,7 +1063,7 @@
     
     db.ref("presence")
       .orderByChild("lastSeen")
-      .limitToLast(500)
+      .limitToLast(1000)
       .on("value", function(snap) {
         cache = snap.val() || {};
         render();
