@@ -92,6 +92,7 @@
     transition: all 0.2s;
   }
   .iconbtn:hover { border-color: var(--blue); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2); }
+  .iconbtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
   
   .stats-bar { display: flex; gap: 12px; margin: 20px 0; flex-wrap: wrap; }
   .stat {
@@ -251,6 +252,7 @@
 </style>
 </head>
 <body>
+  <!-- LOCK SCREEN -->
   <div id="lock">
     <div class="lock-box">
       <div class="lock-icon">🔒</div>
@@ -262,6 +264,7 @@
     </div>
   </div>
 
+  <!-- TOPBAR -->
   <header class="topbar">
     <div class="logo">
       <div class="logo-icon">👻</div>
@@ -276,8 +279,10 @@
       <input class="search" id="search" placeholder="Buscar usuario...">
     </div>
     <button class="iconbtn" id="soundBtn" title="Aviso de nuevo usuario">🔔</button>
+    <button class="iconbtn" id="backfillBtn" title="Precargar todos los avatares en Firebase">🖼️</button>
   </header>
 
+  <!-- STATS BAR (también sirven como filtros) -->
   <div class="stats-bar" id="statsBar">
     <div class="stat active" data-filter="all">
       <div class="stat-icon total">👥</div>
@@ -314,8 +319,31 @@
   <h2 id="offTitle" style="display:none">Desconectados recientemente</h2>
   <div class="grid" id="gridOff"></div>
 
+  <!-- TOAST -->
   <div id="toast"></div>
 
+  <!-- MODAL PROGRESO BACKFILL -->
+  <div class="modal-bg" id="progressModal">
+    <div class="modal" style="width: 400px;">
+      <div class="modal-head">
+        <div class="modal-info">
+          <div class="modal-name">🖼️ Precargando avatares</div>
+          <div class="modal-sub" id="progressSub">Iniciando...</div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div style="width:100%; height:8px; background:#0d1117; border-radius:4px; overflow:hidden; margin-bottom:12px;">
+          <div id="progressBar" style="width:0%; height:100%; background:var(--gradient-1); transition:width 0.3s;"></div>
+        </div>
+        <div id="progressStats" style="text-align:center; font-size:12px; color:var(--text-muted);">
+          0 / 0 cargados · 0 fallidos
+        </div>
+      </div>
+      <div class="modal-footer">No cierres esta ventana mientras se ejecuta</div>
+    </div>
+  </div>
+
+  <!-- MODAL TROLL -->
   <div class="modal-bg" id="trollModal">
     <div class="modal">
       <div class="modal-head">
@@ -441,7 +469,6 @@
     return proxy.prefix ? (proxy.prefix + encodeURIComponent(base)) : base;
   }
 
-  // Intenta obtener el avatar de un proxy específico
   function fetchFromProxy(uid, proxyIndex, onSuccess, onFail) {
     if (proxyIndex >= PROXIES.length) { onFail(); return; }
     var proxy = PROXIES[proxyIndex];
@@ -469,21 +496,19 @@
       });
   }
 
-  // Procesa la cola de avatares (máx 8 en paralelo)
   function processAvatarQueue() {
     while (avatarsLoading < MAX_AVATARS_PARALLEL && avatarQueue.length > 0) {
       var task = avatarQueue.shift();
       avatarsLoading++;
       loadAvatarNow(task.uid, task.priority, function() {
         avatarsLoading--;
-        processAvatarQueue(); // continuar con el siguiente
+        processAvatarQueue();
       });
     }
   }
 
-  // Carga real del avatar (comprueba Firebase → localStorage → proxy)
   function loadAvatarNow(uid, priority, done) {
-    // 1. ¿Ya está en Firebase? (rápido, sin peticiones extra)
+    // 1. ¿Ya está en Firebase?
     if (avatarFirebase[uid]) {
       avatarCache[uid] = avatarFirebase[uid];
       render();
@@ -491,7 +516,7 @@
       return;
     }
     
-    // 2. ¿Está en localStorage? (también rápido)
+    // 2. ¿Está en localStorage?
     try {
       var stored = localStorage.getItem(AVATAR_LS_PREFIX + uid);
       if (stored && stored.indexOf("http") === 0) {
@@ -503,25 +528,25 @@
       }
     } catch (e) {}
     
-    // 3. ¿Lo trae el presence desde Firebase? (el hub ya lo envía)
+    // 3. ¿Lo trae el presence?
     var fromPresence = cache[uid] && cache[uid].avatarUrl;
     if (fromPresence && fromPresence.indexOf("http") === 0) {
       avatarCache[uid] = fromPresence;
       avatarFirebase[uid] = fromPresence;
       saveAvatarToStorage(uid, fromPresence);
+      db.ref("avatars/" + uid).set(fromPresence).catch(function() {});
       render();
       done();
       return;
     }
     
-    // 4. Cargar desde proxies y guardar en Firebase
+    // 4. Cargar desde proxies
     avatarCache[uid] = "pending";
     fetchFromProxy(uid, 0,
       function(imageUrl) {
         avatarCache[uid] = imageUrl;
         avatarFirebase[uid] = imageUrl;
         saveAvatarToStorage(uid, imageUrl);
-        // Guardar en Firebase para futuras sesiones
         db.ref("avatars/" + uid).set(imageUrl).catch(function() {});
         render();
         done();
@@ -538,16 +563,12 @@
     try { localStorage.setItem(AVATAR_LS_PREFIX + uid, url); } catch (e) {}
   }
 
-  // Encolar avatar con prioridad (1 = alta/online, 2 = baja/offline)
   function queueAvatar(uid, priority) {
-    // Si ya está en caché, no hacer nada
     if (avatarCache[uid] && avatarCache[uid] !== "pending") return;
-    // Si ya está en cola, no duplicar
     for (var i = 0; i < avatarQueue.length; i++) {
       if (avatarQueue[i].uid === uid) return;
     }
     avatarQueue.push({ uid: uid, priority: priority });
-    // Ordenar por prioridad (menor número = primero)
     avatarQueue.sort(function(a, b) { return a.priority - b.priority; });
     processAvatarQueue();
   }
@@ -556,12 +577,10 @@
     var letter = esc((name || "?").charAt(0).toUpperCase());
     var cached = avatarCache[uid];
     
-    // Si tenemos imagen, mostrarla
     if (cached && cached !== "pending" && cached !== "letter") {
       return '<div class="av"><span>' + letter + '</span><img src="' + cached + '" loading="lazy" onerror="this.style.display=\'none\'"></div>';
     }
     
-    // Si no, encolar (prioridad 1 = online, 2 = offline)
     if (!cached) queueAvatar(uid, priority || 2);
     
     return '<div class="av"><span>' + letter + '</span></div>';
@@ -654,7 +673,6 @@
         '<button class="b-scare" data-act="scare" data-uid="' + esc(uid) + '">👹 Jumpscare</button>' +
         '<button class="b-music" data-act="music" data-uid="' + esc(uid) + '">🎵 Música</button>' +
         '<button class="b-troll" data-act="troll" data-uid="' + esc(uid) + '">🎯 Troll</button>';
-    // Prioridad: 1 si online, 2 si reciente
     var priority = isRecent ? 2 : 1;
     return '<div class="card' + (isBanned ? " is-banned" : "") + (isRecent ? " off" : "") + '">' +
       '<div class="top">' +
@@ -827,7 +845,6 @@
     } else if (avatarFirebase[uid]) {
       img.src = avatarFirebase[uid]; img.style.display = "block";
     } else {
-      // Cargar de prioridad alta porque el usuario lo pidió explícitamente
       avatarCache[uid] = "pending";
       fetchFromProxy(uid, 0,
         function(imageUrl) {
@@ -892,6 +909,128 @@
   try { document.getElementById("soundBtn").textContent = soundOn ? "🔔" : "🔕"; } catch (e) {}
 
   // ============================================================
+  // BACKFILL DE AVATARES (botón "🖼️")
+  // ============================================================
+  var backfillRunning = false;
+
+  async function runBackfill() {
+    if (backfillRunning) {
+      toast("⚠️ Ya hay un backfill en ejecución");
+      return;
+    }
+    backfillRunning = true;
+    
+    var modal = document.getElementById("progressModal");
+    var backfillBtn = document.getElementById("backfillBtn");
+    modal.classList.add("show");
+    if (backfillBtn) backfillBtn.disabled = true;
+    document.getElementById("progressBar").style.width = "0%";
+    document.getElementById("progressSub").textContent = "Cargando presence...";
+    document.getElementById("progressStats").textContent = "0 / 0 cargados · 0 fallidos";
+    
+    try {
+      var presenceSnap = await db.ref("presence").once("value");
+      var presence = presenceSnap.val() || {};
+      var uids = Object.keys(presence);
+      
+      var avatarsSnap = await db.ref("avatars").once("value");
+      var existingAvatars = avatarsSnap.val() || {};
+      
+      var missing = uids.filter(function(uid) { return !existingAvatars[uid]; });
+      
+      console.log("[Backfill] Total: " + uids.length + " | Sin avatar: " + missing.length);
+      
+      document.getElementById("progressSub").textContent = 
+        missing.length === 0 
+          ? "Todos los avatares ya están cargados ✅" 
+          : "Cargando " + missing.length + " avatares...";
+      
+      if (missing.length === 0) {
+        setTimeout(function() {
+          modal.classList.remove("show");
+          backfillBtn.disabled = false;
+          toast("✅ Todos los avatares ya están en Firebase");
+        }, 1500);
+        backfillRunning = false;
+        return;
+      }
+      
+      var loaded = 0;
+      var failed = 0;
+      var total = missing.length;
+      var MAX_PARALLEL = 8;
+      
+      function loadOne(uid) {
+        return new Promise(function(resolve) {
+          fetchFromProxy(uid, 0,
+            function(imageUrl) {
+              db.ref("avatars/" + uid).set(imageUrl).then(function() {
+                avatarFirebase[uid] = imageUrl;
+                avatarCache[uid] = imageUrl;
+                try { localStorage.setItem(AVATAR_LS_PREFIX + uid, imageUrl); } catch (e) {}
+                loaded++;
+                updateProgress(loaded, failed, total);
+                resolve(true);
+              }).catch(function() {
+                loaded++;
+                updateProgress(loaded, failed, total);
+                resolve(true);
+              });
+            },
+            function() {
+              failed++;
+              updateProgress(loaded, failed, total);
+              resolve(false);
+            }
+          );
+        });
+      }
+      
+      function updateProgress(l, f, t) {
+        var pct = Math.floor(((l + f) / t) * 100);
+        document.getElementById("progressBar").style.width = pct + "%";
+        document.getElementById("progressStats").textContent = 
+          l + " / " + t + " cargados · " + f + " fallidos";
+      }
+      
+      for (var i = 0; i < missing.length; i += MAX_PARALLEL) {
+        var batch = missing.slice(i, i + MAX_PARALLEL);
+        await Promise.all(batch.map(function(uid) { return loadOne(uid); }));
+        await new Promise(function(r) { setTimeout(r, 250); });
+      }
+      
+      console.log("[Backfill] ✅ Completado: " + loaded + " cargados, " + failed + " fallidos");
+      
+      document.getElementById("progressSub").textContent = "✅ Completado";
+      document.getElementById("progressStats").textContent = 
+        loaded + " cargados · " + failed + " fallidos";
+      
+      render();
+      
+      setTimeout(function() {
+        modal.classList.remove("show");
+        if (backfillBtn) backfillBtn.disabled = false;
+        toast("✅ Backfill completo: " + loaded + " cargados, " + failed + " fallidos");
+      }, 2000);
+      
+    } catch (e) {
+      console.error("[Backfill] Error:", e);
+      document.getElementById("progressSub").textContent = "❌ Error: " + e.message;
+      setTimeout(function() { 
+        modal.classList.remove("show");
+        if (backfillBtn) backfillBtn.disabled = false;
+      }, 3000);
+    }
+    
+    backfillRunning = false;
+  }
+
+  var backfillBtnEl = document.getElementById("backfillBtn");
+  if (backfillBtnEl) {
+    backfillBtnEl.addEventListener("click", runBackfill);
+  }
+
+  // ============================================================
   // LOGIN (SHA256)
   // ============================================================
   function sha256hex(str) {
@@ -922,7 +1061,6 @@
       console.warn("[Avatares] No se pudo cargar de Firebase:", err.message);
     });
     
-    // Cargar presence con límite
     db.ref("presence")
       .orderByChild("lastSeen")
       .limitToLast(500)
