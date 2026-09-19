@@ -216,6 +216,14 @@
     object-fit: cover;
   }
   
+  .av .loading {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #21262d;
+    font-size: 20px;
+    opacity: 0.5;
+  }
+  
   .info { min-width: 0; flex: 1; }
   
   .name {
@@ -697,60 +705,117 @@
   }
 
   // ============================================================
-  // AVATARES — usando roproxy.com (el proxy oficial para Roblox)
+  // AVATARES — Sistema robusto con múltiples proxies y caché
   // ============================================================
-  function loadAvatar(uid) {
-    // Evitar cargas duplicadas
-    if (avatarCache[uid] && avatarCache[uid] !== "pending") return;
-    avatarCache[uid] = "pending";
+  var AVATAR_CACHE_KEY = "explhub_avatar_cache_";
+  var AVATAR_TIMEOUT = 8000; // 8 segundos máximo por intento
 
-    // Construir la URL de la API de Roblox
-    var robloxApiUrl = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" 
-                     + encodeURIComponent(uid) 
-                     + "&size=150x150&format=Png&isCircular=false";
+  // Lista de proxies en orden de preferencia (el primero que funcione, gana)
+  var PROXIES = [
+    { name: "roproxy", host: "thumbnails.roproxy.com" },
+    { name: "rotunnel", host: "thumbnails.rotunnel.com" },
+    { name: "rprxy", host: "thumbnails.rprxy.xyz" },
+    { name: "corsproxy", prefix: "https://corsproxy.io/?url=", host: "thumbnails.roblox.com" },
+    { name: "allorigins", prefix: "https://api.allorigins.win/raw?url=", host: "thumbnails.roblox.com" }
+  ];
 
-    // Reemplazar el dominio por roproxy (el proxy que SÍ funciona con Roblox)
-    var proxyUrl = robloxApiUrl.replace("thumbnails.roblox.com", "thumbnails.roproxy.com");
+  function buildAvatarUrl(uid, proxy) {
+    // Endpoint con returnPolicy=PlaceHolder para obtener una imagen por defecto si falla
+    var base = "https://" + proxy.host + "/v1/users/avatar-headshot?userIds=" 
+             + encodeURIComponent(uid) 
+             + "&size=150x150&format=Png&isCircular=false&returnPolicy=PlaceHolder";
+    return proxy.prefix ? (proxy.prefix + encodeURIComponent(base)) : base;
+  }
 
-    fetch(proxyUrl)
+  function loadAvatarFromProxy(uid, proxyIndex, onSuccess, onFail) {
+    if (proxyIndex >= PROXIES.length) {
+      onFail();
+      return;
+    }
+    var proxy = PROXIES[proxyIndex];
+    var url = buildAvatarUrl(uid, proxy);
+    
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, AVATAR_TIMEOUT);
+    
+    fetch(url, { signal: controller.signal })
       .then(function(r) {
-        if (!r.ok) throw new Error("Proxy response not ok: " + r.status);
+        clearTimeout(timeoutId);
+        if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
       .then(function(data) {
-        if (data && data.data && data.data[0] && data.data[0].imageUrl) {
-          avatarCache[uid] = data.data[0].imageUrl;
+        if (data && data.data && data.data[0] && data.data[0].imageUrl && data.data[0].state === "Completed") {
+          onSuccess(data.data[0].imageUrl);
+        } else if (data && data.data && data.data[0] && data.data[0].imageUrl) {
+          // Aceptamos aunque esté en "Pending" porque igual viene una imagen placeholder
+          onSuccess(data.data[0].imageUrl);
         } else {
-          avatarCache[uid] = "letter";
+          throw new Error("Sin imageUrl");
         }
-        render();
       })
       .catch(function(err) {
-        console.warn("[Avatar] Falló roproxy para " + uid + ":", err.message);
-        // Fallback: intentar con CORS proxy alternativo
-        var fallbackUrl = "https://corsproxy.io/?" + encodeURIComponent(robloxApiUrl);
-        fetch(fallbackUrl)
-          .then(function(r) { return r.json(); })
-          .then(function(data) {
-            if (data && data.data && data.data[0] && data.data[0].imageUrl) {
-              avatarCache[uid] = data.data[0].imageUrl;
-            } else {
-              avatarCache[uid] = "letter";
-            }
-            render();
-          })
-          .catch(function() {
-            avatarCache[uid] = "letter";
-            render();
-          });
+        clearTimeout(timeoutId);
+        console.warn("[Avatar] Proxy " + proxy.name + " falló para " + uid + ":", err.message);
+        loadAvatarFromProxy(uid, proxyIndex + 1, onSuccess, onFail);
       });
+  }
+
+  function loadAvatar(uid) {
+    // Evitar cargas duplicadas
+    if (avatarCache[uid] && avatarCache[uid] !== "pending") return;
+    
+    // 1. Intentar recuperar de localStorage (caché persistente)
+    var cachedFromStorage = null;
+    try {
+      cachedFromStorage = localStorage.getItem(AVATAR_CACHE_KEY + uid);
+    } catch (e) {}
+    
+    if (cachedFromStorage && cachedFromStorage.indexOf("http") === 0) {
+      avatarCache[uid] = cachedFromStorage;
+      render();
+      return;
+    }
+    
+    // 2. Intentar con avatarUrl de Firebase (si el hub lo envió)
+    var fromFirebase = cache[uid] && cache[uid].avatarUrl;
+    if (fromFirebase && fromFirebase.indexOf("http") === 0 && fromFirebase.indexOf("rbxthumb") === -1) {
+      avatarCache[uid] = fromFirebase;
+      saveAvatarToStorage(uid, fromFirebase);
+      render();
+      return;
+    }
+    
+    avatarCache[uid] = "pending";
+    
+    // 3. Cargar desde los proxies con fallback
+    loadAvatarFromProxy(uid, 0,
+      function(imageUrl) {
+        avatarCache[uid] = imageUrl;
+        saveAvatarToStorage(uid, imageUrl);
+        render();
+      },
+      function() {
+        console.warn("[Avatar] Todos los proxies fallaron para " + uid);
+        avatarCache[uid] = "letter";
+        render();
+      }
+    );
+  }
+
+  function saveAvatarToStorage(uid, url) {
+    try {
+      localStorage.setItem(AVATAR_CACHE_KEY + uid, url);
+    } catch (e) {
+      // localStorage lleno o bloqueado, ignorar
+    }
   }
 
   function avatarHtml(uid, name) {
     var letter = esc((name || "?").charAt(0).toUpperCase());
     var cached = avatarCache[uid];
     
-    // Si ya tenemos imagen, mostrarla (con la letra como fondo por si tarda en cargar)
+    // Si ya tenemos imagen, mostrarla con la letra de fondo
     if (cached && cached !== "pending" && cached !== "letter") {
       return '<div class="av"><span>' + letter + '</span><img src="' + cached + '" loading="lazy" onerror="this.style.display=\'none\'"></div>';
     }
@@ -1028,28 +1093,17 @@
     if (cached && cached !== "pending" && cached !== "letter") {
       img.src = cached; img.style.display = "block";
     } else {
-      // Cargar desde roproxy
-      var robloxApiUrl = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" 
-                       + encodeURIComponent(uid) 
-                       + "&size=150x150&format=Png&isCircular=false";
-      var proxyUrl = robloxApiUrl.replace("thumbnails.roblox.com", "thumbnails.roproxy.com");
-      
-      fetch(proxyUrl)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data && data.data && data.data[0] && data.data[0].imageUrl) {
-            avatarCache[uid] = data.data[0].imageUrl;
-            img.src = data.data[0].imageUrl; img.style.display = "block";
-          }
-        }).catch(function() {
-          var fallbackUrl = "https://corsproxy.io/?" + encodeURIComponent(robloxApiUrl);
-          fetch(fallbackUrl).then(function(r) { return r.json(); }).then(function(data) {
-            if (data && data.data && data.data[0] && data.data[0].imageUrl) {
-              avatarCache[uid] = data.data[0].imageUrl;
-              img.src = data.data[0].imageUrl; img.style.display = "block";
-            }
-          }).catch(function() {});
-        });
+      // Cargar desde el mismo sistema de proxies
+      loadAvatarFromProxy(uid, 0,
+        function(imageUrl) {
+          avatarCache[uid] = imageUrl;
+          saveAvatarToStorage(uid, imageUrl);
+          img.src = imageUrl; img.style.display = "block";
+        },
+        function() {
+          // Fallback silencioso
+        }
+      );
     }
     document.getElementById("trollModal").classList.add("show");
   }
