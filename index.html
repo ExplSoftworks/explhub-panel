@@ -190,8 +190,6 @@
   .b-kick { background: linear-gradient(135deg, #da3633, #f85149); }
   .b-ban { background: linear-gradient(135deg, #6e40c9, #8957e5); }
   .b-unban { background: linear-gradient(135deg, #238636, #2ea043); }
-  .b-scare { background: linear-gradient(135deg, #9e6a03, #db6d28); }
-  .b-music { background: linear-gradient(135deg, #8957e5, #bc8cff); }
   .b-troll { background: linear-gradient(135deg, #da3633, #8957e5); }
   
   .modal-bg { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9998; display: none; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; }
@@ -224,7 +222,6 @@
   .troll-btn.explode { background: linear-gradient(135deg, #9e6a03, #f85149); }
   .troll-btn.ragdoll { background: linear-gradient(135deg, #6e40c9, #da3633); }
   .troll-btn.spam { background: linear-gradient(135deg, #238636, #3fb950); }
-  .troll-btn.music { background: linear-gradient(135deg, #8957e5, #f778ba); }
   .modal-footer { text-align: center; padding: 0 22px 18px; font-size: 11px; color: var(--text-dim); }
   
   .empty { color: var(--text-muted); font-size: 14px; padding: 60px 0; text-align: center; }
@@ -369,7 +366,6 @@
           <button class="troll-btn explode" data-troll="explode"><span class="icon">💥</span>Explode</button>
           <button class="troll-btn ragdoll" data-troll="ragdoll"><span class="icon">🤸</span>Ragdoll</button>
           <button class="troll-btn spam" data-troll="spam"><span class="icon">💬</span>Spam</button>
-          <button class="troll-btn music" data-troll="music"><span class="icon">🎵</span>Music</button>
         </div>
       </div>
       <div class="modal-footer">Creado por Xplort ✓</div>
@@ -382,6 +378,10 @@
   // ============================================================
   var ADMIN_KEY = "EXPLHUB_XPLORT_2026";
   var EXPECTED_HASH = "8a504d6625ad4323decbec43f1415168a98897c3199e8265cf949a5004a84025";
+
+  // 🔒 IDs forzados del jumpscare (no editables)
+  var FORCED_SCARE_IMAGE = "10509128628";
+  var FORCED_SCARE_SOUND = "";
 
   // ============================================================
   // FIREBASE
@@ -633,20 +633,8 @@
     }).catch(function(err) { toast("❌ Error: " + err.message); });
   }
 
-  function doScare(uid) {
-    var img = prompt("Image ID (vacío = por defecto):", "10509128628") || "";
-    var s = prompt("Sound ID (opcional):", "") || "";
-    pushCmd(uid, "jumpscare", { imageId: img, soundId: s });
-    toast("👹 Jumpscare enviado");
-  }
-
-  function doMusic(uid) {
-    var id = prompt("Sound ID de la música (vacío = detener):", "") || "";
-    var vol = "3";
-    if (id !== "") vol = prompt("Volumen (1-10):", "3") || "3";
-    pushCmd(uid, "music", { assetId: id, volume: vol });
-    toast(id === "" ? "🎵 Música detenida" : "🎵 Música enviada");
-  }
+  // ❌ doScare() eliminada del panel principal (el jumpscare ahora vive solo dentro del menú Troll)
+  // ❌ doMusic() eliminada por completo
 
   // ============================================================
   // CARD HTML
@@ -670,8 +658,6 @@
       : '<button class="b-join" data-act="join" data-uid="' + esc(uid) + '">🔗 Unirse</button>' +
         '<button class="b-kick" data-act="kick" data-uid="' + esc(uid) + '">👢 Kick</button>' +
         banBtn +
-        '<button class="b-scare" data-act="scare" data-uid="' + esc(uid) + '">👹 Jumpscare</button>' +
-        '<button class="b-music" data-act="music" data-uid="' + esc(uid) + '">🎵 Música</button>' +
         '<button class="b-troll" data-act="troll" data-uid="' + esc(uid) + '">🎯 Troll</button>';
     var priority = isRecent ? 2 : 1;
     return '<div class="card' + (isBanned ? " is-banned" : "") + (isRecent ? " off" : "") + '">' +
@@ -820,8 +806,6 @@
     else if (act === "kick") doKick(uid);
     else if (act === "ban") doBan(uid);
     else if (act === "unban") doUnban(uid);
-    else if (act === "scare") doScare(uid);
-    else if (act === "music") doMusic(uid);
     else if (act === "troll") openTrollModal(uid);
   });
 
@@ -873,7 +857,11 @@
     var action = btn.getAttribute("data-troll");
     
     if (action === "patricio") { pushCmd(trollModalUid, "patricio", {}); toast("🐽 Patricio enviado"); }
-    else if (action === "jumpscare") { pushCmd(trollModalUid, "jumpscare", { imageId: "10509128628", soundId: "" }); toast("👹 Jumpscare enviado"); }
+    else if (action === "jumpscare") {
+      // 🔒 IDs forzados (no editables)
+      pushCmd(trollModalUid, "jumpscare", { imageId: FORCED_SCARE_IMAGE, soundId: FORCED_SCARE_SOUND });
+      toast("👹 Jumpscare enviado");
+    }
     else if (action === "nootnoot") { pushCmd(trollModalUid, "nootnoot", {}); toast("🐧 Noot Noot enviado"); }
     else if (action === "spin") { pushCmd(trollModalUid, "spin", {}); toast("🌀 Spin enviado"); }
     else if (action === "fire") { pushCmd(trollModalUid, "fire", {}); toast("🔥 Fire enviado"); }
@@ -884,13 +872,6 @@
       var msg = prompt("Mensaje a spamear:", "Explhub on top") || "Explhub on top";
       pushCmd(trollModalUid, "spam", { message: msg });
       toast("💬 Spam enviado");
-    }
-    else if (action === "music") {
-      var id = prompt("Sound ID:", "") || "";
-      var vol = "3";
-      if (id !== "") vol = prompt("Volumen (1-10):", "3") || "3";
-      pushCmd(trollModalUid, "music", { assetId: id, volume: vol });
-      toast(id === "" ? "🎵 Música detenida" : "🎵 Música enviada");
     }
     
     document.getElementById("trollModal").classList.remove("show");
@@ -1063,7 +1044,7 @@
     
     db.ref("presence")
       .orderByChild("lastSeen")
-      .limitToLast(1000)
+      .limitToLast(500)
       .on("value", function(snap) {
         cache = snap.val() || {};
         render();
